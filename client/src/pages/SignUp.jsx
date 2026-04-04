@@ -10,6 +10,7 @@ import {
   HiOutlineUser,
 } from "react-icons/hi2";
 import axios from "axios";
+import toast from "react-hot-toast";
 import { serverUrl } from "../App";
 
 const roles = ["user", "owner", "deliveryBoy"];
@@ -37,9 +38,9 @@ const SignUp = () => {
         },
         { withCredentials: true },
       );
-      console.log(result.data);
+      toast.success(result.data.message || "Account created successfully");
     } catch (error) {
-      console.log(error);
+      toast.error(error.response?.data?.message || "Signup failed");
     }
   };
 
@@ -181,6 +182,7 @@ const SignUp = () => {
 
           <button
             type="button"
+            onClick={() => toast("Google signup is not connected yet")}
             className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white py-2.5 text-[13px] font-medium text-slate-700 transition hover:border-[#ff5a36]/50 hover:bg-[#fff7f3]"
           >
             <FcGoogle className="text-base" />

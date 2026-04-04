@@ -3,9 +3,24 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.jsx";
 import { BrowserRouter } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 
 createRoot(document.getElementById("root")).render(
-  <BrowserRouter>
-    <App />
-  </BrowserRouter>,
+  <StrictMode>
+    <BrowserRouter>
+      <App />
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          duration: 2500,
+          style: {
+            borderRadius: "12px",
+            background: "#fff",
+            color: "#1e293b",
+            border: "1px solid #f1e5df",
+          },
+        }}
+      />
+    </BrowserRouter>
+  </StrictMode>,
 );

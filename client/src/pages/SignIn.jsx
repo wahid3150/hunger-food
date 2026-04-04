@@ -8,6 +8,7 @@ import {
   HiOutlineLockClosed,
 } from "react-icons/hi2";
 import axios from "axios";
+import toast from "react-hot-toast";
 import { serverUrl } from "../App";
 
 const SignIn = () => {
@@ -28,9 +29,9 @@ const SignIn = () => {
         { withCredentials: true },
       );
 
-      console.log(result.data);
+      toast.success(result.data.message || "Signed in successfully");
     } catch (error) {
-      console.log(error);
+      toast.error(error.response?.data?.message || "Signin failed");
     }
   };
 
@@ -113,6 +114,7 @@ const SignIn = () => {
 
           <button
             type="button"
+            onClick={() => toast("Google signin is not connected yet")}
             className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white py-2.5 text-[13px] font-medium text-slate-700 transition hover:border-[#ff5a36]/50 hover:bg-[#fff7f3]"
           >
             <FcGoogle className="text-base" />
