@@ -36,7 +36,7 @@ export const registerUser = async (req, res) => {
       httpOnly: true,
     });
 
-    return res.statu(201).json(createNewUser);
+    return res.status(201).json(createNewUser);
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -75,7 +75,7 @@ export const loginUser = async (req, res) => {
       httpOnly: true,
     });
 
-    return res.statu(200).json({
+    return res.status(200).json({
       success: true,
       message: "login successfull",
     });
