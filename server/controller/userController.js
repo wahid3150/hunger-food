@@ -155,7 +155,7 @@ export const sendOtp = async (req, res) => {
       });
     }
 
-    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex");
 
