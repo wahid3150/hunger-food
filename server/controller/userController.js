@@ -9,6 +9,13 @@ export const registerUser = async (req, res) => {
   try {
     const existingUser = await User.findOne({ email });
     if (existingUser) {
+      if (existingUser.provider === "google") {
+        return res.status(400).json({
+          success: false,
+          message: "This email is already registered with Google sign-in.",
+        });
+      }
+
       return res.status(400).json({
         success: false,
         message: "User Already exist",
@@ -26,6 +33,7 @@ export const registerUser = async (req, res) => {
     const createNewUser = await User.create({
       fullName,
       email,
+      provider: "local",
       password: hashedPassword,
       mobile,
       role,
@@ -63,6 +71,13 @@ export const loginUser = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "User not found",
+      });
+    }
+
+    if (user.provider === "google") {
+      return res.status(400).json({
+        success: false,
+        message: "This account uses Google sign-in. Please continue with Google.",
       });
     }
 
@@ -311,6 +326,75 @@ export const resetPassword = async (req, res) => {
   } catch (error) {
     console.error("RESET PASSWORD ERROR:", error);
 
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+export const googleAuth = async (req, res) => {
+  try {
+    const { fullName, email, mobile, role } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    let user = await User.findOne({ email });
+
+    if (user && user.provider === "local") {
+      return res.status(400).json({
+        success: false,
+        message: "This email is already registered with email and password.",
+      });
+    }
+
+    if (!user) {
+      user = await User.create({
+        fullName,
+        email,
+        mobile,
+        role: role || "user",
+        provider: "google",
+      });
+    } else {
+      user.fullName = fullName || user.fullName;
+      user.mobile = mobile || user.mobile;
+      user.role = role || user.role;
+      await user.save();
+    }
+
+    const genToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
+    res.cookie("token", genToken, {
+      secure: false,
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      httpOnly: true,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: user.mobile
+        ? "Google signup successful"
+        : "Google account connected. Please complete your profile.",
+      requiresProfileCompletion: !user.mobile,
+      user: {
+        _id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        mobile: user.mobile,
+        role: user.role,
+        provider: user.provider,
+      },
+    });
+  } catch (error) {
+    console.error("Google auth error", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
