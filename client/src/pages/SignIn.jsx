@@ -10,11 +10,14 @@ import {
 import axios from "axios";
 import toast from "react-hot-toast";
 import { serverUrl } from "../App";
+import { auth } from "../utils/firebase";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 
 const SignIn = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const handleSignIn = async (e) => {
     e.preventDefault();
@@ -32,6 +35,54 @@ const SignIn = () => {
       toast.success(result.data.message || "Signed in successfully");
     } catch (error) {
       toast.error(error.response?.data?.message || "Signin failed");
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "select_account" });
+
+      const result = await signInWithPopup(auth, provider);
+      const googleUser = result.user;
+      const googlePayload = {
+        email: googleUser.email || "",
+        role: "user",
+      };
+
+      if (googleUser.displayName) {
+        googlePayload.fullName = googleUser.displayName;
+      }
+
+      if (googleUser.phoneNumber) {
+        googlePayload.mobile = googleUser.phoneNumber.replace(/[^\d+]/g, "");
+      }
+
+      const response = await axios.post(
+        `${serverUrl}/api/auth/google-auth`,
+        googlePayload,
+        { withCredentials: true },
+      );
+
+      if (response.data.requiresProfileCompletion) {
+        toast.error("Please complete your profile from the signup page first.");
+        return;
+      }
+
+      toast.success("Signed in with Google successfully");
+    } catch (error) {
+      if (error.code !== "auth/popup-closed-by-user") {
+        toast.error(
+          error.response?.data?.message ||
+            error.response?.data?.errors?.[0] ||
+            error.message ||
+            "Google signin failed",
+        );
+      }
+    } finally {
+      setIsGoogleLoading(false);
     }
   };
 
@@ -114,11 +165,12 @@ const SignIn = () => {
 
           <button
             type="button"
-            onClick={() => toast("Google signin is not connected yet")}
+            onClick={handleGoogleSignIn}
+            disabled={isGoogleLoading}
             className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white py-2.5 text-[13px] font-medium text-slate-700 transition hover:border-[#ff5a36]/50 hover:bg-[#fff7f3]"
           >
             <FcGoogle className="text-base" />
-            Sign in with Google
+            {isGoogleLoading ? "Connecting Google..." : "Sign in with Google"}
           </button>
         </form>
 
