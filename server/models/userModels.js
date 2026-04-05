@@ -17,13 +17,23 @@ const userSchema = new mongoose.Schema(
       trim: true,
       match: [/.+@.+\..+/, "Please provide a valid email address"],
     },
+    provider: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local",
+      required: true,
+    },
     password: {
       type: String,
-      required: true,
+      required() {
+        return this.provider === "local";
+      },
     },
     mobile: {
       type: String,
-      required: true,
+      required() {
+        return this.provider === "local";
+      },
       match: [/^\+?\d{10,13}$/, "Please provide a valid phone number"],
     },
     role: {
