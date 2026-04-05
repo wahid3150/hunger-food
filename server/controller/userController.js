@@ -327,6 +327,7 @@ export const resetPassword = async (req, res) => {
   }
 };
 
+/* Google auth is not actually verified on the backend, so anyone can forge a Google login/signup by posting an email to /api/auth/google-auth. In this controller the server trusts fullName, email, mobile, and role from req.body and issues a session cookie without verifying a Firebase ID token. This is the biggest blocker before calling the flow production-ready. */
 export const googleAuth = async (req, res) => {
   try {
     const { fullName, email, mobile, role } = req.body;
@@ -375,7 +376,7 @@ export const googleAuth = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: user.mobile
-        ? "Google signup successful"
+        ? "Google authentication successful"
         : "Google account connected. Please complete your profile.",
       requiresProfileCompletion: !user.mobile,
       user: {
