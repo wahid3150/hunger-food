@@ -4,8 +4,8 @@ const userSchema = new mongoose.Schema(
   {
     fullName: {
       type: String,
-      min: 3,
-      max: 30,
+      minlength: 3,
+      maxlength: 30,
       required: true,
       trim: true,
     },
@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      match: [/.+@.+\..+/, "Please provide a valid email address"],
+      index: true,
     },
     provider: {
       type: String,
@@ -34,7 +34,6 @@ const userSchema = new mongoose.Schema(
       required() {
         return this.provider === "local";
       },
-      match: [/^\+?\d{10,13}$/, "Please provide a valid phone number"],
     },
     role: {
       type: String,
