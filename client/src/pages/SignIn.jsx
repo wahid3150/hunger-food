@@ -13,14 +13,46 @@ import { serverUrl } from "../App";
 import { auth } from "../utils/firebase";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 
+const getErrorMessage = (error, fallbackMessage) =>
+  error.response?.data?.message ||
+  error.response?.data?.errors?.[0] ||
+  error.message ||
+  fallbackMessage;
+
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const SignIn = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  const validateForm = () => {
+    const nextErrors = {};
+
+    if (!email.trim()) {
+      nextErrors.email = "Email is required";
+    } else if (!emailPattern.test(email.trim())) {
+      nextErrors.email = "Please provide a valid email address";
+    }
+
+    if (!password.trim()) {
+      nextErrors.password = "Password is required";
+    } else if (password.trim().length < 6) {
+      nextErrors.password = "Password must be at least 6 characters long";
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
 
   const handleSignIn = async (e) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
 
     try {
       const result = await axios.post(
@@ -34,7 +66,7 @@ const SignIn = () => {
 
       toast.success(result.data.message || "Signed in successfully");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Signin failed");
+      toast.error(getErrorMessage(error, "Signin failed"));
     }
   };
 
@@ -74,12 +106,7 @@ const SignIn = () => {
       toast.success("Signed in with Google successfully");
     } catch (error) {
       if (error.code !== "auth/popup-closed-by-user") {
-        toast.error(
-          error.response?.data?.message ||
-            error.response?.data?.errors?.[0] ||
-            error.message ||
-            "Google signin failed",
-        );
+        toast.error(getErrorMessage(error, "Google signin failed"));
       }
     } finally {
       setIsGoogleLoading(false);
@@ -102,7 +129,7 @@ const SignIn = () => {
               htmlFor="email"
               className="mb-1 block text-xs font-semibold text-slate-700"
             >
-              Email
+              Email <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <HiOutlineEnvelope className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[15px] text-slate-400" />
@@ -111,11 +138,21 @@ const SignIn = () => {
                 type="email"
                 placeholder="Enter your Email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setErrors((prev) => ({ ...prev, email: "" }));
+                }}
                 autoComplete="email"
-                className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-[13px] text-slate-700 outline-none transition focus:border-[#ff5a36] focus:ring-2 focus:ring-[#ff5a36]/10"
+                className={`w-full rounded-lg border bg-white py-2.5 pl-9 pr-3 text-[13px] text-slate-700 outline-none transition focus:ring-2 focus:ring-[#ff5a36]/10 ${
+                  errors.email
+                    ? "border-red-400 focus:border-red-400"
+                    : "border-slate-200 focus:border-[#ff5a36]"
+                }`}
               />
             </div>
+            {errors.email ? (
+              <p className="mt-1 text-[11px] text-red-500">{errors.email}</p>
+            ) : null}
           </div>
 
           <div>
@@ -124,7 +161,7 @@ const SignIn = () => {
                 htmlFor="password"
                 className="block text-xs font-semibold text-slate-700"
               >
-                Password
+                Password <span className="text-red-500">*</span>
               </label>
               <Link
                 to="/forgot-password"
@@ -141,9 +178,16 @@ const SignIn = () => {
                 type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setErrors((prev) => ({ ...prev, password: "" }));
+                }}
                 autoComplete="current-password"
-                className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-9 text-[13px] text-slate-700 outline-none transition focus:border-[#ff5a36] focus:ring-2 focus:ring-[#ff5a36]/10"
+                className={`w-full rounded-lg border bg-white py-2.5 pl-9 pr-9 text-[13px] text-slate-700 outline-none transition focus:ring-2 focus:ring-[#ff5a36]/10 ${
+                  errors.password
+                    ? "border-red-400 focus:border-red-400"
+                    : "border-slate-200 focus:border-[#ff5a36]"
+                }`}
               />
               <button
                 type="button"
@@ -154,6 +198,9 @@ const SignIn = () => {
                 {showPassword ? <HiMiniEyeSlash /> : <HiMiniEye />}
               </button>
             </div>
+            {errors.password ? (
+              <p className="mt-1 text-[11px] text-red-500">{errors.password}</p>
+            ) : null}
           </div>
 
           <button

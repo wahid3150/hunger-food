@@ -12,6 +12,14 @@ import {
 } from "react-icons/hi2";
 import { serverUrl } from "../App";
 
+const getErrorMessage = (error, fallbackMessage) =>
+  error.response?.data?.message ||
+  error.response?.data?.errors?.[0] ||
+  error.message ||
+  fallbackMessage;
+
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const ForgotPassword = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -22,9 +30,21 @@ const ForgotPassword = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loadingAction, setLoadingAction] = useState("");
+  const [errors, setErrors] = useState({});
 
   const handleSendOtp = async (e) => {
     e.preventDefault();
+
+    if (!email.trim()) {
+      setErrors({ email: "Email is required" });
+      return;
+    }
+
+    if (!emailPattern.test(email.trim())) {
+      setErrors({ email: "Please provide a valid email address" });
+      return;
+    }
+
     setLoadingAction("sendOtp");
 
     try {
@@ -35,7 +55,7 @@ const ForgotPassword = () => {
       setStep("verifyOtp");
       toast.success(result.data.message || "OTP sent successfully");
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to send OTP");
+      toast.error(getErrorMessage(err, "Failed to send OTP"));
     } finally {
       setLoadingAction("");
     }
@@ -43,6 +63,17 @@ const ForgotPassword = () => {
 
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
+
+    if (!otp.trim()) {
+      setErrors({ otp: "OTP is required" });
+      return;
+    }
+
+    if (!/^\d{6}$/.test(otp.trim())) {
+      setErrors({ otp: "OTP must be exactly 6 digits" });
+      return;
+    }
+
     setLoadingAction("verifyOtp");
 
     try {
@@ -54,7 +85,7 @@ const ForgotPassword = () => {
       setStep("resetPassword");
       toast.success(result.data.message || "OTP verified successfully");
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to verify OTP");
+      toast.error(getErrorMessage(err, "Failed to verify OTP"));
     } finally {
       setLoadingAction("");
     }
@@ -62,6 +93,27 @@ const ForgotPassword = () => {
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
+
+    const nextErrors = {};
+
+    if (!newPassword.trim()) {
+      nextErrors.newPassword = "New password is required";
+    } else if (newPassword.trim().length < 6) {
+      nextErrors.newPassword = "Password must be at least 6 characters long";
+    }
+
+    if (!confirmPassword.trim()) {
+      nextErrors.confirmPassword = "Confirm password is required";
+    } else if (newPassword !== confirmPassword) {
+      nextErrors.confirmPassword = "Passwords do not match";
+    }
+
+    setErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
+      return;
+    }
+
     setLoadingAction("resetPassword");
 
     try {
@@ -80,7 +132,7 @@ const ForgotPassword = () => {
         navigate("/signin");
       }, 1200);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to reset password");
+      toast.error(getErrorMessage(err, "Failed to reset password"));
     } finally {
       setLoadingAction("");
     }
@@ -134,7 +186,7 @@ const ForgotPassword = () => {
                   htmlFor="email"
                   className="mb-1 block text-xs font-semibold text-slate-700"
                 >
-                  Email
+                  Email <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <HiOutlineEnvelope className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[15px] text-slate-400" />
@@ -143,11 +195,21 @@ const ForgotPassword = () => {
                     type="email"
                     placeholder="Enter your Email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setErrors((prev) => ({ ...prev, email: "" }));
+                    }}
                     autoComplete="email"
-                    className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-[13px] text-slate-700 outline-none transition focus:border-[#ff5a36] focus:ring-2 focus:ring-[#ff5a36]/10"
+                    className={`w-full rounded-lg border bg-white py-2.5 pl-9 pr-3 text-[13px] text-slate-700 outline-none transition focus:ring-2 focus:ring-[#ff5a36]/10 ${
+                      errors.email
+                        ? "border-red-400 focus:border-red-400"
+                        : "border-slate-200 focus:border-[#ff5a36]"
+                    }`}
                   />
                 </div>
+                {errors.email ? (
+                  <p className="mt-1 text-[11px] text-red-500">{errors.email}</p>
+                ) : null}
               </div>
 
               <button
@@ -168,7 +230,7 @@ const ForgotPassword = () => {
                   htmlFor="email"
                   className="mb-1 block text-xs font-semibold text-slate-700"
                 >
-                  Email
+                  Email <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <HiOutlineEnvelope className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[15px] text-slate-400" />
@@ -187,7 +249,7 @@ const ForgotPassword = () => {
                   htmlFor="otp"
                   className="mb-1 block text-xs font-semibold text-slate-700"
                 >
-                  OTP Code
+                  OTP Code <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <HiOutlineKey className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[15px] text-slate-400" />
@@ -197,13 +259,23 @@ const ForgotPassword = () => {
                     placeholder="Enter 6-digit OTP"
                     value={otp}
                     onChange={(e) =>
-                      setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
+                      {
+                        setOtp(e.target.value.replace(/\D/g, "").slice(0, 6));
+                        setErrors((prev) => ({ ...prev, otp: "" }));
+                      }
                     }
                     maxLength={6}
                     inputMode="numeric"
-                    className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-[13px] text-slate-700 outline-none transition focus:border-[#ff5a36] focus:ring-2 focus:ring-[#ff5a36]/10"
+                    className={`w-full rounded-lg border bg-white py-2.5 pl-9 pr-3 text-[13px] text-slate-700 outline-none transition focus:ring-2 focus:ring-[#ff5a36]/10 ${
+                      errors.otp
+                        ? "border-red-400 focus:border-red-400"
+                        : "border-slate-200 focus:border-[#ff5a36]"
+                    }`}
                   />
                 </div>
+                {errors.otp ? (
+                  <p className="mt-1 text-[11px] text-red-500">{errors.otp}</p>
+                ) : null}
               </div>
 
               <button
@@ -242,7 +314,7 @@ const ForgotPassword = () => {
                   htmlFor="email"
                   className="mb-1 block text-xs font-semibold text-slate-700"
                 >
-                  Email
+                  Email <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <HiOutlineEnvelope className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[15px] text-slate-400" />
@@ -261,7 +333,7 @@ const ForgotPassword = () => {
                   htmlFor="newPassword"
                   className="mb-1 block text-xs font-semibold text-slate-700"
                 >
-                  New Password
+                  New Password <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <HiOutlineLockClosed className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[15px] text-slate-400" />
@@ -270,9 +342,16 @@ const ForgotPassword = () => {
                     type={showNewPassword ? "text" : "password"}
                     placeholder="Enter new password"
                     value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
+                    onChange={(e) => {
+                      setNewPassword(e.target.value);
+                      setErrors((prev) => ({ ...prev, newPassword: "" }));
+                    }}
                     autoComplete="new-password"
-                    className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-9 text-[13px] text-slate-700 outline-none transition focus:border-[#ff5a36] focus:ring-2 focus:ring-[#ff5a36]/10"
+                    className={`w-full rounded-lg border bg-white py-2.5 pl-9 pr-9 text-[13px] text-slate-700 outline-none transition focus:ring-2 focus:ring-[#ff5a36]/10 ${
+                      errors.newPassword
+                        ? "border-red-400 focus:border-red-400"
+                        : "border-slate-200 focus:border-[#ff5a36]"
+                    }`}
                   />
                   <button
                     type="button"
@@ -285,6 +364,9 @@ const ForgotPassword = () => {
                     {showNewPassword ? <HiMiniEyeSlash /> : <HiMiniEye />}
                   </button>
                 </div>
+                {errors.newPassword ? (
+                  <p className="mt-1 text-[11px] text-red-500">{errors.newPassword}</p>
+                ) : null}
               </div>
 
               <div>
@@ -292,7 +374,7 @@ const ForgotPassword = () => {
                   htmlFor="confirmPassword"
                   className="mb-1 block text-xs font-semibold text-slate-700"
                 >
-                  Confirm Password
+                  Confirm Password <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <HiOutlineLockClosed className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[15px] text-slate-400" />
@@ -301,9 +383,16 @@ const ForgotPassword = () => {
                     type={showConfirmPassword ? "text" : "password"}
                     placeholder="Confirm new password"
                     value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      setErrors((prev) => ({ ...prev, confirmPassword: "" }));
+                    }}
                     autoComplete="new-password"
-                    className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-9 text-[13px] text-slate-700 outline-none transition focus:border-[#ff5a36] focus:ring-2 focus:ring-[#ff5a36]/10"
+                    className={`w-full rounded-lg border bg-white py-2.5 pl-9 pr-9 text-[13px] text-slate-700 outline-none transition focus:ring-2 focus:ring-[#ff5a36]/10 ${
+                      errors.confirmPassword
+                        ? "border-red-400 focus:border-red-400"
+                        : "border-slate-200 focus:border-[#ff5a36]"
+                    }`}
                   />
                   <button
                     type="button"
@@ -322,6 +411,11 @@ const ForgotPassword = () => {
                     )}
                   </button>
                 </div>
+                {errors.confirmPassword ? (
+                  <p className="mt-1 text-[11px] text-red-500">
+                    {errors.confirmPassword}
+                  </p>
+                ) : null}
               </div>
 
               <button

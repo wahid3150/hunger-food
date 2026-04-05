@@ -16,6 +16,14 @@ import { auth } from "../utils/firebase";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 
 const roles = ["user", "owner", "deliveryBoy"];
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const pakistaniMobilePattern = /^(?:\+92|92|0)?3[0-9]{9}$/;
+
+const getErrorMessage = (error, fallbackMessage) =>
+  error.response?.data?.message ||
+  error.response?.data?.errors?.[0] ||
+  error.message ||
+  fallbackMessage;
 
 const SignUp = () => {
   const [selectedRole, setSelectedRole] = useState("user");
@@ -27,9 +35,60 @@ const SignUp = () => {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isCompletingGoogleProfile, setIsCompletingGoogleProfile] = useState(false);
   const [googleAccountEmail, setGoogleAccountEmail] = useState("");
+  const [errors, setErrors] = useState({});
+
+  const validateSignUpForm = () => {
+    const nextErrors = {};
+
+    if (!fullName.trim()) {
+      nextErrors.fullName = "Full name is required";
+    } else if (fullName.trim().length < 3) {
+      nextErrors.fullName = "Name must be at least 3 characters long";
+    }
+
+    if (!email.trim()) {
+      nextErrors.email = "Email is required";
+    } else if (!emailPattern.test(email.trim())) {
+      nextErrors.email = "Please provide a valid email address";
+    }
+
+    if (!mobile.trim()) {
+      nextErrors.mobile = "Mobile number is required";
+    } else if (!pakistaniMobilePattern.test(mobile.trim())) {
+      nextErrors.mobile =
+        "Enter a valid Pakistani mobile number (e.g. 03001234567 or +923001234567)";
+    }
+
+    if (!password.trim()) {
+      nextErrors.password = "Password is required";
+    } else if (password.trim().length < 6) {
+      nextErrors.password = "Password must be at least 6 characters long";
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const validateGoogleProfileForm = () => {
+    const nextErrors = {};
+
+    if (!mobile.trim()) {
+      nextErrors.mobile = "Mobile number is required";
+    } else if (!pakistaniMobilePattern.test(mobile.trim())) {
+      nextErrors.mobile =
+        "Enter a valid Pakistani mobile number (e.g. 03001234567 or +923001234567)";
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
 
   const handleSignUp = async (e) => {
     e.preventDefault();
+
+    if (!validateSignUpForm()) {
+      return;
+    }
 
     try {
       const result = await axios.post(
@@ -45,7 +104,7 @@ const SignUp = () => {
       );
       toast.success(result.data.message || "Account created successfully");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Signup failed");
+      toast.error(getErrorMessage(error, "Signup failed"));
     }
   };
 
@@ -66,13 +125,12 @@ const SignUp = () => {
       setMobile("");
       setGoogleAccountEmail(googleEmail);
       setIsCompletingGoogleProfile(true);
+      setErrors({});
 
       toast.success("Google account connected. Complete your profile.");
     } catch (error) {
       if (error.code !== "auth/popup-closed-by-user") {
-        toast.error(
-          error.response?.data?.message || error.message || "Google signup failed",
-        );
+        toast.error(getErrorMessage(error, "Google signup failed"));
       }
     } finally {
       setIsGoogleLoading(false);
@@ -82,8 +140,7 @@ const SignUp = () => {
   const handleCompleteGoogleProfile = async (e) => {
     e.preventDefault();
 
-    if (!mobile.trim()) {
-      toast.error("Mobile number is required");
+    if (!validateGoogleProfileForm()) {
       return;
     }
 
@@ -102,11 +159,7 @@ const SignUp = () => {
       setIsCompletingGoogleProfile(response.data.requiresProfileCompletion);
       toast.success(response.data.message || "Profile completed successfully");
     } catch (error) {
-      toast.error(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to complete Google profile",
-      );
+      toast.error(getErrorMessage(error, "Failed to complete Google profile"));
     }
   };
 
@@ -129,11 +182,11 @@ const SignUp = () => {
           {!isCompletingGoogleProfile && (
             <div>
               <label
-                htmlFor="fullName"
-                className="mb-1 block text-xs font-semibold text-slate-700"
-              >
-                Full Name
-              </label>
+              htmlFor="fullName"
+              className="mb-1 block text-xs font-semibold text-slate-700"
+            >
+              Full Name <span className="text-red-500">*</span>
+            </label>
               <div className="relative">
                 <HiOutlineUser className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[15px] text-slate-400" />
                 <input
@@ -141,22 +194,32 @@ const SignUp = () => {
                   type="text"
                   placeholder="Enter your Full Name"
                   value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  onChange={(e) => {
+                    setFullName(e.target.value);
+                    setErrors((prev) => ({ ...prev, fullName: "" }));
+                  }}
                   autoComplete="name"
-                  className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-[13px] text-slate-700 outline-none transition focus:border-[#ff5a36] focus:ring-2 focus:ring-[#ff5a36]/10"
+                  className={`w-full rounded-lg border bg-white py-2.5 pl-9 pr-3 text-[13px] text-slate-700 outline-none transition focus:ring-2 focus:ring-[#ff5a36]/10 ${
+                    errors.fullName
+                      ? "border-red-400 focus:border-red-400"
+                      : "border-slate-200 focus:border-[#ff5a36]"
+                  }`}
                 />
               </div>
+              {errors.fullName ? (
+                <p className="mt-1 text-[11px] text-red-500">{errors.fullName}</p>
+              ) : null}
             </div>
           )}
 
           {!isCompletingGoogleProfile && (
             <div>
               <label
-                htmlFor="email"
-                className="mb-1 block text-xs font-semibold text-slate-700"
-              >
-                Email
-              </label>
+              htmlFor="email"
+              className="mb-1 block text-xs font-semibold text-slate-700"
+            >
+              Email <span className="text-red-500">*</span>
+            </label>
               <div className="relative">
                 <HiOutlineEnvelope className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[15px] text-slate-400" />
                 <input
@@ -164,11 +227,21 @@ const SignUp = () => {
                   type="email"
                   placeholder="Enter your Email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setErrors((prev) => ({ ...prev, email: "" }));
+                  }}
                   autoComplete="email"
-                  className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-[13px] text-slate-700 outline-none transition focus:border-[#ff5a36] focus:ring-2 focus:ring-[#ff5a36]/10"
+                  className={`w-full rounded-lg border bg-white py-2.5 pl-9 pr-3 text-[13px] text-slate-700 outline-none transition focus:ring-2 focus:ring-[#ff5a36]/10 ${
+                    errors.email
+                      ? "border-red-400 focus:border-red-400"
+                      : "border-slate-200 focus:border-[#ff5a36]"
+                  }`}
                 />
               </div>
+              {errors.email ? (
+                <p className="mt-1 text-[11px] text-red-500">{errors.email}</p>
+              ) : null}
             </div>
           )}
 
@@ -177,7 +250,7 @@ const SignUp = () => {
               htmlFor="mobile"
               className="mb-1 block text-xs font-semibold text-slate-700"
             >
-              Mobile
+              Mobile <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <HiOutlinePhone className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[15px] text-slate-400" />
@@ -186,11 +259,21 @@ const SignUp = () => {
                 type="tel"
                 placeholder="Enter your Mobile Number"
                 value={mobile}
-                onChange={(e) => setMobile(e.target.value)}
+                onChange={(e) => {
+                  setMobile(e.target.value);
+                  setErrors((prev) => ({ ...prev, mobile: "" }));
+                }}
                 autoComplete="tel"
-                className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-[13px] text-slate-700 outline-none transition focus:border-[#ff5a36] focus:ring-2 focus:ring-[#ff5a36]/10"
+                className={`w-full rounded-lg border bg-white py-2.5 pl-9 pr-3 text-[13px] text-slate-700 outline-none transition focus:ring-2 focus:ring-[#ff5a36]/10 ${
+                  errors.mobile
+                    ? "border-red-400 focus:border-red-400"
+                    : "border-slate-200 focus:border-[#ff5a36]"
+                }`}
               />
             </div>
+            {errors.mobile ? (
+              <p className="mt-1 text-[11px] text-red-500">{errors.mobile}</p>
+            ) : null}
           </div>
 
           {!isCompletingGoogleProfile && (
@@ -199,7 +282,7 @@ const SignUp = () => {
                 htmlFor="password"
                 className="mb-1 block text-xs font-semibold text-slate-700"
               >
-                Password
+                Password <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <HiOutlineLockClosed className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[15px] text-slate-400" />
@@ -208,9 +291,16 @@ const SignUp = () => {
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setErrors((prev) => ({ ...prev, password: "" }));
+                  }}
                   autoComplete="new-password"
-                  className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-9 text-[13px] text-slate-700 outline-none transition focus:border-[#ff5a36] focus:ring-2 focus:ring-[#ff5a36]/10"
+                  className={`w-full rounded-lg border bg-white py-2.5 pl-9 pr-9 text-[13px] text-slate-700 outline-none transition focus:ring-2 focus:ring-[#ff5a36]/10 ${
+                    errors.password
+                      ? "border-red-400 focus:border-red-400"
+                      : "border-slate-200 focus:border-[#ff5a36]"
+                  }`}
                 />
                 <button
                   type="button"
@@ -221,6 +311,9 @@ const SignUp = () => {
                   {showPassword ? <HiMiniEyeSlash /> : <HiMiniEye />}
                 </button>
               </div>
+              {errors.password ? (
+                <p className="mt-1 text-[11px] text-red-500">{errors.password}</p>
+              ) : null}
             </div>
           )}
 
@@ -233,7 +326,7 @@ const SignUp = () => {
           {!isCompletingGoogleProfile && (
             <div>
               <span className="mb-1 block text-xs font-semibold text-slate-700">
-                Role
+                Role <span className="text-red-500">*</span>
               </span>
               <div className="grid grid-cols-3 gap-2">
                 {roles.map((role) => {
