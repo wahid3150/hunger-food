@@ -22,6 +22,7 @@ const userSlice = createSlice({
   name: "user",
   initialState: {
     userData: null,
+    city: "",
     status: "idle", // idle | loading | succeeded | failed
     error: null,
   },
@@ -35,6 +36,9 @@ const userSlice = createSlice({
       state.userData = null;
       state.status = "failed";
       state.error = null;
+    },
+    setCity: (state, action) => {
+      state.city = action.payload || "";
     },
   },
   extraReducers: (builder) => {
@@ -56,5 +60,5 @@ const userSlice = createSlice({
   },
 });
 
-export const { setUser, clearUser } = userSlice.actions;
+export const { setUser, clearUser, setCity } = userSlice.actions;
 export default userSlice.reducer;
