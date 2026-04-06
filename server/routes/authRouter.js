@@ -15,6 +15,8 @@ import { sendOtpSchema } from "../validator/sendOtpSchema.js";
 import { verifyOtpSchema } from "../validator/verifyOtpSchema.js";
 import { resetPasswordSchema } from "../validator/resetPasswordSchema.js";
 import googleAuthSchema from "../validator/googleAuthSchema.js";
+import isAuth from "../middleware/isAuth.js";
+import { getProfile } from "../controller/authController.js";
 
 const router = express.Router();
 
@@ -29,5 +31,7 @@ router.post(
   resetPassword,
 );
 router.post("/google-auth", validateBody(googleAuthSchema), googleAuth);
+
+router.get("/current", isAuth, getProfile);
 
 export default router;
