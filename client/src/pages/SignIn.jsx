@@ -116,7 +116,6 @@ const SignIn = () => {
           fullName: googleFullName,
           email: googleAccountEmail,
           mobile,
-          role: "user",
         },
         { withCredentials: true },
       );
@@ -151,7 +150,6 @@ const SignIn = () => {
         `${serverUrl}/api/auth/google-auth`,
         {
           email: nextEmail,
-          role: "user",
           ...(nextFullName ? { fullName: nextFullName } : {}),
           ...(googleUser.phoneNumber
             ? { mobile: googleUser.phoneNumber.replace(/[^\d+]/g, "") }
