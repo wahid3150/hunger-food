@@ -14,6 +14,8 @@ import { serverUrl } from "../App";
 import { auth } from "../utils/firebase";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import AuthButtonLoader from "../components/AuthButtonLoader";
+import { useDispatch } from "react-redux";
+import { setUser } from "../../redux/userSlice";
 
 const getErrorMessage = (error, fallbackMessage) =>
   error.response?.data?.message ||
@@ -25,6 +27,7 @@ const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const pakistaniMobilePattern = /^(?:\+92|92|0)?3[0-9]{9}$/;
 
 const SignIn = () => {
+  const dispatch = useDispatch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [mobile, setMobile] = useState("");
@@ -88,6 +91,7 @@ const SignIn = () => {
         { withCredentials: true },
       );
 
+      dispatch(setUser(result.data?.user ?? result.data));
       toast.success(result.data.message || "Signed in successfully");
     } catch (error) {
       toast.error(getErrorMessage(error, "Signin failed"));
@@ -123,6 +127,7 @@ const SignIn = () => {
       }
 
       setIsCompletingGoogleProfile(false);
+      dispatch(setUser(response.data?.user ?? response.data));
       toast.success(response.data.message || "Signed in with Google successfully");
     } catch (error) {
       toast.error(getErrorMessage(error, "Failed to complete Google profile"));
@@ -165,6 +170,7 @@ const SignIn = () => {
         return;
       }
 
+      dispatch(setUser(response.data?.user ?? response.data));
       toast.success("Signed in with Google successfully");
     } catch (error) {
       if (error.code !== "auth/popup-closed-by-user") {

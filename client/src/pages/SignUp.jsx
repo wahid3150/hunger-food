@@ -15,6 +15,8 @@ import { serverUrl } from "../App";
 import { auth } from "../utils/firebase";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import AuthButtonLoader from "../components/AuthButtonLoader";
+import { useDispatch } from "react-redux";
+import { setUser } from "../../redux/userSlice";
 
 const roles = ["user", "owner", "deliveryBoy"];
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -27,6 +29,7 @@ const getErrorMessage = (error, fallbackMessage) =>
   fallbackMessage;
 
 const SignUp = () => {
+  const dispatch = useDispatch();
   const [selectedRole, setSelectedRole] = useState("user");
   const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState("");
@@ -106,6 +109,7 @@ const SignUp = () => {
         },
         { withCredentials: true },
       );
+      dispatch(setUser(result.data?.user ?? result.data));
       toast.success(result.data.message || "Account created successfully");
     } catch (error) {
       toast.error(getErrorMessage(error, "Signup failed"));
@@ -165,6 +169,9 @@ const SignUp = () => {
       );
 
       setIsCompletingGoogleProfile(response.data.requiresProfileCompletion);
+      if (!response.data.requiresProfileCompletion) {
+        dispatch(setUser(response.data?.user ?? response.data));
+      }
       toast.success(response.data.message || "Profile completed successfully");
     } catch (error) {
       toast.error(getErrorMessage(error, "Failed to complete Google profile"));
