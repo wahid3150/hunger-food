@@ -12,6 +12,7 @@ import toast from "react-hot-toast";
 import { serverUrl } from "../App";
 import { auth } from "../utils/firebase";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import AuthButtonLoader from "../components/AuthButtonLoader";
 
 const getErrorMessage = (error, fallbackMessage) =>
   error.response?.data?.message ||
@@ -25,6 +26,7 @@ const SignIn = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isSigningIn, setIsSigningIn] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -54,6 +56,8 @@ const SignIn = () => {
       return;
     }
 
+    setIsSigningIn(true);
+
     try {
       const result = await axios.post(
         `${serverUrl}/api/auth/signin`,
@@ -67,6 +71,8 @@ const SignIn = () => {
       toast.success(result.data.message || "Signed in successfully");
     } catch (error) {
       toast.error(getErrorMessage(error, "Signin failed"));
+    } finally {
+      setIsSigningIn(false);
     }
   };
 
@@ -205,19 +211,30 @@ const SignIn = () => {
 
           <button
             type="submit"
-            className="w-full rounded-lg bg-[#ff5a36] py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#f24d28]"
+            disabled={isSigningIn || isGoogleLoading}
+            className="w-full rounded-lg bg-[#ff5a36] py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#f24d28] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Sign In
+            {isSigningIn ? (
+              <AuthButtonLoader label="Signing In..." />
+            ) : (
+              "Sign In"
+            )}
           </button>
 
           <button
             type="button"
             onClick={handleGoogleSignIn}
-            disabled={isGoogleLoading}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white py-2.5 text-[13px] font-medium text-slate-700 transition hover:border-[#ff5a36]/50 hover:bg-[#fff7f3]"
+            disabled={isSigningIn || isGoogleLoading}
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white py-2.5 text-[13px] font-medium text-slate-700 transition hover:border-[#ff5a36]/50 hover:bg-[#fff7f3] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <FcGoogle className="text-base" />
-            {isGoogleLoading ? "Connecting Google..." : "Sign in with Google"}
+            {isGoogleLoading ? (
+              <AuthButtonLoader label="Connecting Google..." color="#ff5a36" />
+            ) : (
+              <>
+                <FcGoogle className="text-base" />
+                <span>Sign in with Google</span>
+              </>
+            )}
           </button>
         </form>
 

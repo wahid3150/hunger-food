@@ -11,6 +11,7 @@ import {
   HiOutlineLockClosed,
 } from "react-icons/hi2";
 import { serverUrl } from "../App";
+import AuthButtonLoader from "../components/AuthButtonLoader";
 
 const getErrorMessage = (error, fallbackMessage) =>
   error.response?.data?.message ||
@@ -218,7 +219,11 @@ const ForgotPassword = () => {
                 disabled={loadingAction === "sendOtp" || !email}
                 className="w-full rounded-lg bg-[#ff5a36] py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#f24d28] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loadingAction === "sendOtp" ? "Sending OTP..." : "Send OTP"}
+                {loadingAction === "sendOtp" ? (
+                  <AuthButtonLoader label="Sending OTP..." />
+                ) : (
+                  "Send OTP"
+                )}
               </button>
             </>
           ) : null}
@@ -284,7 +289,11 @@ const ForgotPassword = () => {
                 disabled={loadingAction === "verifyOtp" || !otp}
                 className="w-full rounded-lg border border-[#ff5a36] bg-white py-2.5 text-[13px] font-semibold text-[#ff5a36] transition hover:bg-[#fff7f3] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loadingAction === "verifyOtp" ? "Verifying..." : "Verify OTP"}
+                {loadingAction === "verifyOtp" ? (
+                  <AuthButtonLoader label="Verifying..." color="#ff5a36" />
+                ) : (
+                  "Verify OTP"
+                )}
               </button>
 
               <button
@@ -428,9 +437,11 @@ const ForgotPassword = () => {
                 }
                 className="w-full rounded-lg bg-[#ff5a36] py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#f24d28] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loadingAction === "resetPassword"
-                  ? "Resetting..."
-                  : "Reset Password"}
+                {loadingAction === "resetPassword" ? (
+                  <AuthButtonLoader label="Resetting..." />
+                ) : (
+                  "Reset Password"
+                )}
               </button>
             </>
           ) : null}

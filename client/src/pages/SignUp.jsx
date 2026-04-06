@@ -14,6 +14,7 @@ import toast from "react-hot-toast";
 import { serverUrl } from "../App";
 import { auth } from "../utils/firebase";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import AuthButtonLoader from "../components/AuthButtonLoader";
 
 const roles = ["user", "owner", "deliveryBoy"];
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -32,6 +33,7 @@ const SignUp = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [mobile, setMobile] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isCompletingGoogleProfile, setIsCompletingGoogleProfile] = useState(false);
   const [googleAccountEmail, setGoogleAccountEmail] = useState("");
@@ -90,6 +92,8 @@ const SignUp = () => {
       return;
     }
 
+    setIsSubmitting(true);
+
     try {
       const result = await axios.post(
         `${serverUrl}/api/auth/signup`,
@@ -105,6 +109,8 @@ const SignUp = () => {
       toast.success(result.data.message || "Account created successfully");
     } catch (error) {
       toast.error(getErrorMessage(error, "Signup failed"));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -144,6 +150,8 @@ const SignUp = () => {
       return;
     }
 
+    setIsSubmitting(true);
+
     try {
       const response = await axios.post(
         `${serverUrl}/api/auth/google-auth`,
@@ -160,6 +168,8 @@ const SignUp = () => {
       toast.success(response.data.message || "Profile completed successfully");
     } catch (error) {
       toast.error(getErrorMessage(error, "Failed to complete Google profile"));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -353,20 +363,35 @@ const SignUp = () => {
 
           <button
             type="submit"
-            className="w-full rounded-lg bg-[#ff5a36] py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#f24d28]"
+            disabled={isSubmitting || isGoogleLoading}
+            className="w-full rounded-lg bg-[#ff5a36] py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#f24d28] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isCompletingGoogleProfile ? "Complete Profile" : "Sign Up"}
+            {isSubmitting ? (
+              <AuthButtonLoader
+                label={isCompletingGoogleProfile ? "Completing Profile..." : "Signing Up..."}
+              />
+            ) : isCompletingGoogleProfile ? (
+              "Complete Profile"
+            ) : (
+              "Sign Up"
+            )}
           </button>
 
           {!isCompletingGoogleProfile && (
             <button
               type="button"
               onClick={handleGoogleSignUp}
-              disabled={isGoogleLoading}
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white py-2.5 text-[13px] font-medium text-slate-700 transition hover:border-[#ff5a36]/50 hover:bg-[#fff7f3]"
+              disabled={isSubmitting || isGoogleLoading}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white py-2.5 text-[13px] font-medium text-slate-700 transition hover:border-[#ff5a36]/50 hover:bg-[#fff7f3] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <FcGoogle className="text-base" />
-              {isGoogleLoading ? "Connecting Google..." : "Sign up with Google"}
+              {isGoogleLoading ? (
+                <AuthButtonLoader label="Connecting Google..." color="#ff5a36" />
+              ) : (
+                <>
+                  <FcGoogle className="text-base" />
+                  <span>Sign up with Google</span>
+                </>
+              )}
             </button>
           )}
         </form>
