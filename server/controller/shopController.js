@@ -1,8 +1,8 @@
-import Shop from "../models/shopModel";
+import Shop from "../models/shopModel.js";
 import {
   deleteMediaFromCloudinary,
   uploadMediaToCloudinary,
-} from "../utils/cloudinaryService";
+} from "../utils/cloudinaryService.js";
 
 export const createShop = async (req, res) => {
   try {
