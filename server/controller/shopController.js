@@ -1,3 +1,4 @@
+import Item from "../models/itemModel.js";
 import Shop from "../models/shopModel.js";
 import {
   deleteMediaFromCloudinary,
@@ -109,7 +110,7 @@ export const updateShop = async (req, res) => {
     if (address) shop.address = address;
 
     if (req.file) {
-      if (!req.files.mimetype.startsWith("image")) {
+      if (!req.file.mimetype.startsWith("image")) {
         return res.status(400).json({
           success: false,
           message: "only image files are allowed",
@@ -139,26 +140,119 @@ export const updateShop = async (req, res) => {
   }
 };
 
-// export const editShop = async (req, res) => {
-//   const { name, image, city, state, address } = req.body;
-//   try {
-//     let image;
-//     if (req.file) {
-//       image = await uploadOnCloudinary(req.file.path);
-//     }
-//     const updatedShop = await Shop.findByIdAndUpdate(
-//       req.params.id,
-//       { name, image, city, state, address },
-//       { new: true },
-//     );
-//     return res.status(200).json(updatedShop);
-//   } catch (error) {
-//     return res
-//       .status(500)
-//       .json({
-//         success: false,
-//         message: "Internal server error",
-//         error: error.message,
-//       });
-//   }
-// };
+export const getMyShop = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const shops = await Shop.find({ owner: userId }).sort({ createdAt: -1 });
+    res.status(200).json({
+      success: true,
+      count: shops.length,
+      shops,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const deleteShop = async (req, res) => {
+  try {
+    const { shopId } = req.params;
+
+    const shop = await Shop.findById(shopId);
+    if (!shop) {
+      return res.status(404).json({
+        success: false,
+        message: "Shop not found",
+      });
+    }
+
+    if (shop.owner.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to delete shop",
+      });
+    }
+
+    if (shop.imagePublicId) {
+      await deleteMediaFromCloudinary(shop.imagePublicId);
+    }
+
+    await shop.deleteOne();
+    res.status(200).json({
+      success: true,
+      message: "Shop deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const getShop = async (req, res) => {
+  try {
+    const { city, search, page = 1, limit = 10 } = req.query;
+
+    let filter = {};
+
+    if (city) {
+      filter.city = city;
+    }
+
+    if (search) {
+      filter.name = { $regex: search, $options: "i" };
+    }
+
+    const skip = (page - 1) * limit;
+    const shops = await Shop.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit));
+
+    const total = await Shop.countDocuments(filter);
+
+    res.status(200).json({
+      success: true,
+      page: Number(page),
+      totalPages: Math.ceil(total / limit),
+      totalShops: total,
+      shops,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const getSingleShop = async (req, res) => {
+  try {
+    const { shopId } = req.params;
+
+    const shop = await Shop.findById(shopId);
+    if (!shop) {
+      return res.status(404).json({
+        success: false,
+        message: "Shop not found",
+      });
+    }
+
+    // find item of this shop
+    const items = await Item.find({ shop: shopId }).sort({ createdAt: -1 });
+    res.status(200).json({
+      success: true,
+      shop,
+      items,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
