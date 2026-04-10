@@ -2,6 +2,7 @@ import express from "express";
 import isAuth from "../middleware/isAuth.js";
 import {
   createShop,
+  deleteShop,
   getMyShop,
   getShop,
   getSingleShop,
