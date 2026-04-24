@@ -15,6 +15,17 @@ export const resetPasswordSchema = Joi.object({
     "string.max": "Password cannot exceed 30 characters",
     "any.required": "New password is required",
   }),
+
+  confirmPassword: Joi.string()
+    .trim()
+    .required()
+    .valid(Joi.ref("newPassword"))
+    .messages({
+      "string.base": "Confirm password must be a text value",
+      "string.empty": "Confirm password is required",
+      "any.only": "Passwords do not match",
+      "any.required": "Confirm password is required",
+    }),
 }).options({
   abortEarly: false,
   stripUnknown: true,
