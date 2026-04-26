@@ -9,8 +9,17 @@ const isAuth = (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded._id || decoded.id;
 
-    req.user = decoded; // contains id, role, etc. so we can use according to our need in controllers
+    if (!userId) {
+      return res.status(401).json({ message: "Invalid token payload" });
+    }
+
+    req.user = {
+      ...decoded,
+      id: userId,
+      _id: userId,
+    }; // normalize user id for controllers that use either id or _id
 
     next();
   } catch (error) {
