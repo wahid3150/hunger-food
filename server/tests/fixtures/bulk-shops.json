@@ -1,0 +1,32 @@
+[
+  {
+    "city": "Peshawar",
+    "state": "KPK",
+    "address": "Shop 12, Saddar Road, near Dean Trade Center, Saddar Bazaar, Peshawar",
+    "image": "shop (1).jpg"
+  },
+  {
+    "city": "Peshawar",
+    "state": "KPK",
+    "address": "Shop 8, Food Street, near Islamia College Road, University Town, Peshawar",
+    "image": "shop (2).jpg"
+  },
+  {
+    "city": "Peshawar",
+    "state": "KPK",
+    "address": "Shop 5, Phase 3 Chowk, Hayatabad, Peshawar",
+    "image": "shop (3).jpg"
+  },
+  {
+    "city": "Peshawar",
+    "state": "KPK",
+    "address": "Shop 17, Main Jamrud Road, near Hayatabad Medical Complex, Peshawar",
+    "image": "shop (4).jpg"
+  },
+  {
+    "city": "Peshawar",
+    "state": "KPK",
+    "address": "Shop 21, Hashtnagri Bazaar, near Hashtnagri Bus Stop, Peshawar",
+    "image": "shop (5).jpg"
+  }
+]
