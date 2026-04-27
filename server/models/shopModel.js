@@ -4,7 +4,6 @@ const shopSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: true,
       trim: true,
       minlength: 3,
       maxlength: 30,
@@ -34,10 +33,6 @@ const shopSchema = new mongoose.Schema(
     address: {
       type: String,
       required: true,
-    },
-    items: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Item",
     },
   },
   { timestamps: true },
