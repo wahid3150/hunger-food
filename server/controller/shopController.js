@@ -172,9 +172,22 @@ export const deleteShop = async (req, res) => {
     if (shop.owner.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
-        message: "Not authorized to delete shop",
+        message: "Not authorized to delete this shop",
       });
     }
+
+    // find all items of this shop
+    const items = await Item.find({ shop: shopId });
+
+    // delete all item images from cloudinary
+    for (const item of items) {
+      if (item.imagePublicId) {
+        await deleteMediaFromCloudinary(item.imagePublicId);
+      }
+    }
+
+    // delete all items form DB
+    await Item.deleteMany({ shop: shopId });
 
     if (shop.imagePublicId) {
       await deleteMediaFromCloudinary(shop.imagePublicId);
@@ -183,7 +196,7 @@ export const deleteShop = async (req, res) => {
     await shop.deleteOne();
     res.status(200).json({
       success: true,
-      message: "Shop deleted successfully",
+      message: "Shop and its items deleted successfully",
     });
   } catch (error) {
     res.status(500).json({
@@ -207,7 +220,7 @@ export const getShop = async (req, res) => {
       filter.name = { $regex: search, $options: "i" };
     }
 
-    const skip = (page - 1) * limit;
+    const skip = (page - 1) * Number(limit);
     const shops = await Shop.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -218,7 +231,7 @@ export const getShop = async (req, res) => {
     res.status(200).json({
       success: true,
       page: Number(page),
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(total / Number(limit)),
       totalShops: total,
       shops,
     });
@@ -243,7 +256,9 @@ export const getSingleShop = async (req, res) => {
     }
 
     // find item of this shop
-    const items = await Item.find({ shop: shopId }).sort({ createdAt: -1 });
+    const items = await Item.find({ shop: shopId, isAvailable: true }).sort({
+      createdAt: -1,
+    });
     res.status(200).json({
       success: true,
       shop,
