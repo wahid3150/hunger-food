@@ -293,6 +293,10 @@ export const getMyItems = async (req, res) => {
 
     if (sort === "price_asc") sortOption = { price: 1 };
     if (sort === "price_desc") sortOption = { price: -1 };
+    if (sort === "latest") sortOption = { createdAt: -1 };
+    if (sort === "oldest") sortOption = { createdAt: 1 };
+    if (sort === "name_asc") sortOption = { name: 1 };
+    if (sort === "name_desc") sortOption = { name: -1 };
 
     const pageNum = Number(page);
     const limitNum = Math.min(Number(limit), 50);
@@ -353,11 +357,12 @@ export const getItemsByShop = async (req, res) => {
 
     let sortOption = { createdAt: -1 }; // default latest
 
-    if (sort === "price_asc") {
-      sortOption = { price: 1 };
-    } else if (sort === "price_desc") {
-      sortOption = { price: -1 };
-    }
+    if (sort === "price_asc") sortOption = { price: 1 };
+    if (sort === "price_desc") sortOption = { price: -1 };
+    if (sort === "latest") sortOption = { createdAt: -1 };
+    if (sort === "oldest") sortOption = { createdAt: 1 };
+    if (sort === "name_asc") sortOption = { name: 1 };
+    if (sort === "name_desc") sortOption = { name: -1 };
 
     const skip = (Number(page) - 1) * Number(limit);
 
@@ -373,7 +378,7 @@ export const getItemsByShop = async (req, res) => {
       count: items.length,
       totalItems,
       currentPage: Number(page),
-      totalPages: Math.ceil(totalItems / limit),
+      totalPages: Math.ceil(totalItems / Number(limit)),
       items,
     });
   } catch (error) {
@@ -443,8 +448,12 @@ export const getAllItems = async (req, res) => {
 
     if (sort === "price_asc") sortOption = { price: 1 };
     if (sort === "price_desc") sortOption = { price: -1 };
+    if (sort === "latest") sortOption = { createdAt: -1 };
+    if (sort === "oldest") sortOption = { createdAt: 1 };
+    if (sort === "name_asc") sortOption = { name: 1 };
+    if (sort === "name_desc") sortOption = { name: -1 };
 
-    const skip = (page - 1) * limit;
+    const skip = (Number(page) - 1) * Number(limit);
 
     const items = await Item.find(filter)
       .populate("shop", "name image")
@@ -458,7 +467,7 @@ export const getAllItems = async (req, res) => {
       success: true,
       totalItems,
       currentPage: Number(page),
-      totalPages: Math.ceil(totalItems / limit),
+      totalPages: Math.ceil(totalItems / Number(limit)),
       items,
     });
   } catch (error) {
