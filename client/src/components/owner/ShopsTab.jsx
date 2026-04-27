@@ -13,7 +13,7 @@ import { serverUrl } from "../../App";
 import ShopFormModal from "./ShopFormModal";
 import DeleteConfirmModal from "./DeleteConfirmModal";
 
-const ShopsTab = ({ onSelectShop }) => {
+const ShopsTab = ({ onSelectShop, onShopSaved }) => {
   const [shops, setShops] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -48,7 +48,8 @@ const ShopsTab = ({ onSelectShop }) => {
       });
       toast.success("Shop deleted successfully");
       setDeleteTarget(null);
-      fetchShops();
+      await fetchShops();
+      onShopSaved && onShopSaved();
     } catch (err) {
       toast.error(err?.response?.data?.message || "Delete failed");
     } finally {
@@ -219,6 +220,7 @@ const ShopsTab = ({ onSelectShop }) => {
           onSaved={() => {
             setShowCreate(false);
             fetchShops();
+            onShopSaved && onShopSaved();
           }}
         />
       )}
@@ -230,6 +232,7 @@ const ShopsTab = ({ onSelectShop }) => {
           onSaved={() => {
             setEditShop(null);
             fetchShops();
+            onShopSaved && onShopSaved();
           }}
         />
       )}

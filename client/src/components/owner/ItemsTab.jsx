@@ -21,6 +21,15 @@ const FOOD_TYPE_COLORS = {
   "non-veg": "bg-orange-50 text-orange-600 border-orange-200",
 };
 
+const SORT_OPTIONS = [
+  { value: "latest", label: "Latest" },
+  { value: "oldest", label: "Oldest" },
+  { value: "price_asc", label: "Price: Low to High" },
+  { value: "price_desc", label: "Price: High to Low" },
+  { value: "name_asc", label: "Name: A to Z" },
+  { value: "name_desc", label: "Name: Z to A" },
+];
+
 const ItemsTab = ({ shops, preSelectedShop, onBack }) => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,6 +37,7 @@ const ItemsTab = ({ shops, preSelectedShop, onBack }) => {
   const [filterShop, setFilterShop] = useState(preSelectedShop?._id || "");
   const [filterFoodType, setFilterFoodType] = useState("");
   const [filterAvailability, setFilterAvailability] = useState("");
+  const [sort, setSort] = useState("latest");
   const [showCreate, setShowCreate] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -45,6 +55,7 @@ const ItemsTab = ({ shops, preSelectedShop, onBack }) => {
       if (filterFoodType) params.foodType = filterFoodType;
       if (filterAvailability !== "") params.isAvailable = filterAvailability;
       if (search) params.search = search;
+      if (sort) params.sort = sort;
       const res = await axios.get(`${serverUrl}/api/item/my-items`, {
         params,
         withCredentials: true,
@@ -57,7 +68,7 @@ const ItemsTab = ({ shops, preSelectedShop, onBack }) => {
     } finally {
       setLoading(false);
     }
-  }, [filterShop, filterFoodType, filterAvailability, search, page]);
+  }, [filterShop, filterFoodType, filterAvailability, search, sort, page]);
 
   useEffect(() => {
     const t = setTimeout(fetchItems, 300);
@@ -66,7 +77,7 @@ const ItemsTab = ({ shops, preSelectedShop, onBack }) => {
 
   useEffect(() => {
     setPage(1);
-  }, [filterShop, filterFoodType, filterAvailability, search]);
+  }, [filterShop, filterFoodType, filterAvailability, search, sort]);
 
   const handleDelete = async () => {
     setDeleteLoading(true);
@@ -202,14 +213,31 @@ const ItemsTab = ({ shops, preSelectedShop, onBack }) => {
           <HiChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
         </div>
 
+        {/* Sort */}
+        <div className="relative">
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            className="appearance-none pl-3 pr-7 py-2 rounded-xl border border-slate-200 text-sm text-slate-700 outline-none focus:border-[#ff5a36] focus:ring-2 focus:ring-[#ff5a36]/10 transition"
+          >
+            {SORT_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <HiChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
+        </div>
+
         {/* Clear filters */}
-        {(search || filterShop || filterFoodType || filterAvailability) && (
+        {(search || filterShop || filterFoodType || filterAvailability || sort !== "latest") && (
           <button
             onClick={() => {
               setSearch("");
               setFilterShop(preSelectedShop?._id || "");
               setFilterFoodType("");
               setFilterAvailability("");
+              setSort("latest");
               setPage(1);
             }}
             className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium text-slate-500 hover:bg-slate-50 transition"

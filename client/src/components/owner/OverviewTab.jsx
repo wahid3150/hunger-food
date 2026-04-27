@@ -25,7 +25,7 @@ const OverviewTab = ({ shops, onGoToShops, onGoToItems }) => {
   useEffect(() => {
     fetchOwnerItems()
       .then((res) => setItems(res.items))
-      .catch(() => {})
+      .catch(() => setItems([]))
       .finally(() => setLoadingItems(false));
   }, []);
 
