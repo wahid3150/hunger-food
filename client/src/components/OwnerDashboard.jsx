@@ -6,6 +6,7 @@ import {
   HiOutlineHome,
   HiOutlineShoppingBag,
   HiOutlineViewGrid,
+  HiOutlineClipboardList,
   HiMenuAlt2,
   HiX,
   HiChevronDown,
@@ -15,6 +16,7 @@ import { serverUrl } from "../App";
 import OverviewTab from "./owner/OverviewTab";
 import ShopsTab from "./owner/ShopsTab";
 import ItemsTab from "./owner/ItemsTab";
+import OrdersTab from "./owner/OrdersTab";
 
 /* ── helpers ────────────────────────────────────── */
 const getInitials = (name) => {
@@ -29,6 +31,7 @@ const NAV_ITEMS = [
   { id: "overview", label: "Overview", icon: <HiOutlineHome className="text-lg" /> },
   { id: "shops", label: "My Shops", icon: <HiOutlineShoppingBag className="text-lg" /> },
   { id: "items", label: "Menu Items", icon: <HiOutlineViewGrid className="text-lg" /> },
+  { id: "orders", label: "Orders", icon: <HiOutlineClipboardList className="text-lg" /> },
 ];
 
 /* ── component ──────────────────────────────────── */
@@ -215,6 +218,7 @@ const OwnerDashboard = () => {
               {activeTab === "overview" && "Your business at a glance"}
               {activeTab === "shops" && "Create and manage your shops"}
               {activeTab === "items" && "Manage your menu items"}
+              {activeTab === "orders" && "Prepare and manage customer orders"}
             </p>
           </div>
 
@@ -282,6 +286,7 @@ const OwnerDashboard = () => {
               onBack={selectedShop ? () => { setSelectedShop(null); goToTab("shops"); } : null}
             />
           )}
+          {activeTab === "orders" && <OrdersTab shops={shops} />}
         </main>
       </div>
     </div>
