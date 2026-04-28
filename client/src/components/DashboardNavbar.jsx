@@ -20,11 +20,13 @@ const getInitials = (name) => {
   return (first + last).toUpperCase() || "U";
 };
 
-const DashboardNavbar = () => {
+const DashboardNavbar = ({ searchValue = "", onSearchChange, onOrdersClick }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const user = useSelector((state) => state.user.userData);
+  const cartItems = useSelector((state) => state.cart.items);
   const [open, setOpen] = useState(false);
+  const [localSearch, setLocalSearch] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("");
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const btnRef = useRef(null);
@@ -32,6 +34,23 @@ const DashboardNavbar = () => {
 
   const fullName = user?.fullName || "Account";
   const initials = useMemo(() => getInitials(fullName), [fullName]);
+  const cartCount = useMemo(
+    () =>
+      cartItems.reduce(
+        (count, item) => count + Number(item.quantity || 0),
+        0,
+      ),
+    [cartItems],
+  );
+  const effectiveSearchValue = onSearchChange ? searchValue : localSearch;
+
+  const handleSearchChange = (value) => {
+    if (onSearchChange) {
+      onSearchChange(value);
+      return;
+    }
+    setLocalSearch(value);
+  };
 
   const location = selectedLocation || city || "Peshawar";
   const locationOptions = useMemo(() => {
@@ -88,6 +107,8 @@ const DashboardNavbar = () => {
             <HiOutlineSearch className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg text-slate-400" />
             <input
               type="text"
+              value={effectiveSearchValue}
+              onChange={(event) => handleSearchChange(event.target.value)}
               placeholder="search delicious food..."
               className="w-full rounded-full border border-slate-200 bg-white py-3 pl-12 pr-4 text-sm text-slate-700 outline-none shadow-[0_10px_25px_rgba(15,23,42,0.10)] transition focus:border-[#ff5a36] focus:ring-2 focus:ring-[#ff5a36]/10"
             />
@@ -98,17 +119,19 @@ const DashboardNavbar = () => {
         <div className="flex items-center gap-4">
           <button
             type="button"
+            onClick={() => navigate("/cart")}
             className="relative rounded-full p-2 text-slate-700 transition hover:bg-slate-50"
             aria-label="Cart"
           >
             <HiOutlineShoppingCart className="text-2xl" />
             <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-[#ff5a36] text-[10px] font-bold text-white">
-              0
+              {cartCount}
             </span>
           </button>
 
           <button
             type="button"
+            onClick={onOrdersClick}
             className="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
           >
             My Orders
@@ -189,12 +212,13 @@ const DashboardNavbar = () => {
 
             <button
               type="button"
+              onClick={() => navigate("/cart")}
               className="relative rounded-full p-2 text-slate-700 transition hover:bg-slate-50"
               aria-label="Cart"
             >
               <HiOutlineShoppingCart className="text-2xl" />
               <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-[#ff5a36] text-[10px] font-bold text-white">
-                0
+                {cartCount}
               </span>
             </button>
 
@@ -219,6 +243,8 @@ const DashboardNavbar = () => {
               <HiOutlineSearch className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg text-slate-400" />
               <input
                 type="text"
+                value={effectiveSearchValue}
+                onChange={(event) => handleSearchChange(event.target.value)}
                 placeholder="search delicious food..."
                 className="w-full rounded-full border border-slate-200 bg-white py-3 pl-12 pr-32 text-sm text-slate-700 outline-none shadow-[0_10px_25px_rgba(15,23,42,0.10)] transition focus:border-[#ff5a36] focus:ring-2 focus:ring-[#ff5a36]/10"
               />
