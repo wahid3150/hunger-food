@@ -396,7 +396,7 @@ export const getSingleItem = async (req, res) => {
     const item = await Item.findOne({
       _id: itemId,
       isAvailable: true,
-    }).populate("shop", "name image");
+    }).populate("shop", "name image city state address");
 
     if (!item) {
       return res.status(404).json({
@@ -456,7 +456,7 @@ export const getAllItems = async (req, res) => {
     const skip = (Number(page) - 1) * Number(limit);
 
     const items = await Item.find(filter)
-      .populate("shop", "name image")
+      .populate("shop", "name image city state address")
       .sort(sortOption)
       .skip(skip)
       .limit(Number(limit));
