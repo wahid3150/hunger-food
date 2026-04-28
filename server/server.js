@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import router from "./routes/authRouter.js";
 import shopRouter from "./routes/shopRouter.js";
 import itemRouter from "./routes/itemRouter.js";
+import orderRouter from "./routes/orderRouter.js";
 import cors from "cors";
 
 const app = express();
@@ -20,6 +21,7 @@ app.use(
 app.use("/api/auth", router);
 app.use("/api/shop", shopRouter);
 app.use("/api/item", itemRouter);
+app.use("/api/orders", orderRouter);
 
 const PORT = process.env.PORT || 5000;
 
