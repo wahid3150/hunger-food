@@ -7,6 +7,8 @@ import useGetCurrentUser from "./hooks/useGetCurrentUser";
 import { useSelector } from "react-redux";
 import Home from "./pages/Home";
 import AuthGate from "./components/AuthGate";
+import CartPage from "./pages/CartPage";
+import CheckOut from "./pages/CheckOut";
 export const serverUrl = "http://localhost:8000";
 
 const App = () => {
@@ -31,6 +33,14 @@ const App = () => {
         <Route
           path="/forgot-password"
           element={!user ? <ForgotPassword /> : <Navigate to="/" replace />}
+        />
+        <Route
+          path="/cart"
+          element={user ? <CartPage /> : <Navigate to="/signin" replace />}
+        />
+        <Route
+          path="/checkout"
+          element={user ? <CheckOut /> : <Navigate to="/signin" replace />}
         />
       </Routes>
     </AuthGate>
