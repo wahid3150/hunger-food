@@ -54,6 +54,14 @@ const orderSchema = new mongoose.Schema(
       latitude: Number,
       longitude: Number,
     },
+    customerName: {
+      type: String,
+      trim: true,
+    },
+    customerPhone: {
+      type: String,
+      trim: true,
+    },
     paymentMethod: {
       type: String,
       enum: ["cod", "online"],
