@@ -33,7 +33,7 @@ export const registerUser = async (req, res) => {
     });
 
     const genToken = jwt.sign(
-      { id: createNewUser._id },
+      { id: createNewUser._id, role: createNewUser.role },
       process.env.JWT_SECRET,
       {
         expiresIn: "7d",
@@ -83,9 +83,13 @@ export const loginUser = async (req, res) => {
       });
     }
 
-    const genToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    const genToken = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "7d",
+      },
+    );
     res.cookie("token", genToken, {
       secure: false,
       sameSite: "lax",
@@ -363,9 +367,13 @@ export const googleAuth = async (req, res) => {
       await user.save();
     }
 
-    const genToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    const genToken = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "7d",
+      },
+    );
     res.cookie("token", genToken, {
       secure: false,
       sameSite: "strict",
