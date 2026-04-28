@@ -4,7 +4,14 @@ import Shop from "../models/shopModel.js";
 
 export const createOrder = async (req, res) => {
   try {
-    const { items, deliveryAddress, paymentMethod } = req.body;
+    const {
+      items,
+      deliveryAddress,
+      paymentMethod,
+      note,
+      customerName,
+      customerPhone,
+    } = req.body;
 
     if (!items || items.length === 0) {
       return res.status(400).json({
@@ -13,7 +20,7 @@ export const createOrder = async (req, res) => {
       });
     }
 
-    if (!deliveryAddress || !paymentMethod) {
+    if (!deliveryAddress?.text || !paymentMethod) {
       return res.status(400).json({
         success: false,
         message: "Delivery address and payment method required",
@@ -21,7 +28,7 @@ export const createOrder = async (req, res) => {
     }
 
     //1. fetch items from DB
-    const itemIds = await items.map((i) => i.itemId);
+    const itemIds = items.map((i) => i.itemId);
 
     const dbItems = await Item.find({ _id: { $in: itemIds } });
 
@@ -37,26 +44,26 @@ export const createOrder = async (req, res) => {
     const shopMap = {};
     for (const cartItem of items) {
       const dbItem = dbItems.find((i) => i._id.toString() === cartItem.itemId);
-    }
 
-    //validate availability
-    if (!dbItem.isAvailable) {
-      return res.status(400).json({
-        success: false,
-        message: `${dbItem.name} is not available`,
+      //validate availability
+      if (!dbItem.isAvailable) {
+        return res.status(400).json({
+          success: false,
+          message: `${dbItem.name} is not available`,
+        });
+      }
+
+      const shopId = dbItem.shop.toString();
+      if (!shopMap[shopId]) {
+        shopMap[shopId] = [];
+      }
+      shopMap[shopId].push({
+        item: dbItem._id,
+        name: dbItem.name,
+        price: dbItem.price,
+        quantity: Number(cartItem.quantity || 1),
       });
     }
-
-    const shopId = dbItem.shop.toString();
-    if (!shopMap[shopId]) {
-      shopMap[shopId] = [];
-    }
-    showMap[shopId].push({
-      item: dbItem._id,
-      name: dbItem.name,
-      price: dbItem.price,
-      quantity: cartItem.quantity,
-    });
 
     //3. create orders per shop
     const createdOrders = [];
@@ -75,6 +82,9 @@ export const createOrder = async (req, res) => {
         totalAmount,
         deliveryAddress,
         paymentMethod,
+        note,
+        customerName,
+        customerPhone,
       });
       createdOrders.push(order);
     }
@@ -96,7 +106,7 @@ export const getMyOrders = async (req, res) => {
     const userId = req.user._id;
 
     const orders = await Order.find({ user: userId })
-      .populate("shop", "name image")
+      .populate("shop", "name image city state address")
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -135,7 +145,7 @@ export const getShopOrders = async (req, res) => {
 
     //get orders of this shop
     const orders = await Order.find({ shop: shopId })
-      .populate("user", "name email")
+      .populate("user", "fullName email mobile")
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -153,7 +163,7 @@ export const getShopOrders = async (req, res) => {
 
 export const updateOrderStatus = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const { orderId } = req.params;
     const { status } = req.body;
 
     //validate input
