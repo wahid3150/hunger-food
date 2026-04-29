@@ -83,7 +83,9 @@ const OrdersTab = ({ shops }) => {
 
       setOrders(nextOrders);
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to load shop orders");
+      toast.error(
+        error?.response?.data?.message || "Failed to load shop orders",
+      );
       setOrders([]);
     } finally {
       setLoading(false);
@@ -122,7 +124,8 @@ const OrdersTab = ({ shops }) => {
         <div>
           <h2 className="text-xl font-bold text-slate-800">Orders</h2>
           <p className="mt-1 text-xs font-medium text-slate-500">
-            Confirm orders, move them into preparation, and send them for delivery.
+            Confirm orders, move them into preparation, and send them for
+            delivery.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -155,14 +158,19 @@ const OrdersTab = ({ shops }) => {
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((item) => (
-            <div key={item} className="h-32 animate-pulse rounded-2xl bg-slate-100" />
+            <div
+              key={item}
+              className="h-32 animate-pulse rounded-2xl bg-slate-100"
+            />
           ))}
         </div>
       ) : orders.length === 0 ? (
         <div className="rounded-2xl border border-slate-100 bg-white px-5 py-14 text-center shadow-sm">
           <HiOutlineClipboardList className="mx-auto text-5xl text-slate-300" />
           <p className="mt-3 font-bold text-slate-800">No orders found</p>
-          <p className="mt-1 text-sm text-slate-500">New customer orders will appear here.</p>
+          <p className="mt-1 text-sm text-slate-500">
+            New customer orders will appear here.
+          </p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -178,8 +186,12 @@ const OrdersTab = ({ shops }) => {
                 <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-bold text-slate-800">{shop.name || "Shop order"}</h3>
-                      <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${statusClass(order.status)}`}>
+                      <h3 className="font-bold text-slate-800">
+                        {shop.name || "Shop order"}
+                      </h3>
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${statusClass(order.status)}`}
+                      >
                         {STATUS_LABELS[order.status] || order.status}
                       </span>
                     </div>
@@ -187,16 +199,22 @@ const OrdersTab = ({ shops }) => {
                       {new Date(order.createdAt).toLocaleString()}
                     </p>
                     <p className="mt-2 text-sm font-semibold text-slate-600">
-                      Customer: {order.customerName || order.user?.fullName || "Customer"}
-                      {order.customerPhone || order.user?.mobile ? ` • ${order.customerPhone || order.user?.mobile}` : ""}
+                      Customer:{" "}
+                      {order.customerName || order.user?.fullName || "Customer"}
+                      {order.customerPhone || order.user?.mobile
+                        ? ` • ${order.customerPhone || order.user?.mobile}`
+                        : ""}
                     </p>
                     <p className="mt-1 max-w-2xl text-xs font-medium text-slate-500">
-                      {order.deliveryAddress?.text || "No delivery address saved"}
+                      {order.deliveryAddress?.text ||
+                        "No delivery address saved"}
                     </p>
                   </div>
 
                   <div className="min-w-[220px]">
-                    <p className="text-xs font-bold text-slate-400 xl:text-right">Order total</p>
+                    <p className="text-xs font-bold text-slate-400 xl:text-right">
+                      Order total
+                    </p>
                     <p className="text-xl font-extrabold text-slate-900 xl:text-right">
                       PKR {Number(order.totalAmount || 0).toLocaleString()}
                     </p>
@@ -210,39 +228,57 @@ const OrdersTab = ({ shops }) => {
                         key={`${order._id}-${item.item}`}
                         className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-sm"
                       >
-                        <span className="font-bold capitalize text-slate-700">{item.name}</span>
+                        <span className="font-bold capitalize text-slate-700">
+                          {item.name}
+                        </span>
                         <span className="font-semibold text-slate-500">
-                          {item.quantity} x PKR {Number(item.price || 0).toLocaleString()}
+                          {item.quantity} x PKR{" "}
+                          {Number(item.price || 0).toLocaleString()}
                         </span>
                       </div>
                     ))}
                   </div>
 
                   <div className="space-y-2">
-                    {actions.map((action) => (
-                      <button
-                        key={action.status}
-                        type="button"
-                        disabled={updatingId === order._id}
-                        onClick={() => updateStatus(order, action.status)}
-                        className={`w-full rounded-xl px-4 py-2.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                          action.status === "cancelled"
-                            ? "bg-red-50 text-red-600 hover:bg-red-100"
-                            : "bg-[#ff5a36] text-white hover:bg-[#e04e2d]"
-                        }`}
-                      >
-                        {updatingId === order._id ? "Updating..." : action.label}
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      disabled
-                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-bold text-slate-400"
-                      title="Delivery assignment will be available after delivery boy logic is added"
-                    >
-                      <HiOutlineTruck />
-                      Assign delivery boy soon
-                    </button>
+                    {actions.length > 0 ? (
+                      actions.map((action) => (
+                        <button
+                          key={action.status}
+                          type="button"
+                          disabled={updatingId === order._id}
+                          onClick={() => updateStatus(order, action.status)}
+                          className={`w-full rounded-xl px-4 py-2.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                            action.status === "cancelled"
+                              ? "bg-red-50 text-red-600 hover:bg-red-100"
+                              : "bg-[#ff5a36] text-white hover:bg-[#e04e2d]"
+                          }`}
+                        >
+                          {updatingId === order._id
+                            ? "Updating..."
+                            : action.label}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
+                        No owner actions available for this order.
+                      </div>
+                    )}
+
+                    <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                      <p className="font-semibold text-slate-800">
+                        Delivery status
+                      </p>
+                      <p className="mt-1">
+                        {String(
+                          order.deliveryStatus || "not_assigned",
+                        ).replaceAll("_", " ")}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {order.deliveryBoy
+                          ? "Delivery boy assigned"
+                          : "Waiting for delivery boy"}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </article>
