@@ -100,23 +100,23 @@ const DashboardNavbar = ({
           </span>
         </button>
 
-          {showLocation ? (
-            <div className="flex items-center gap-2 border-l border-slate-200 pl-5">
-              <HiOutlineLocationMarker className="text-lg text-[#ff5a36]" />
-              <select
-                value={location}
-                onChange={(e) => setSelectedLocation(e.target.value)}
-                className="cursor-pointer bg-transparent text-sm font-semibold text-slate-700 outline-none transition hover:text-slate-900"
-                aria-label="Location"
-              >
-                {locationOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : null}
+        {showLocation ? (
+          <div className="flex items-center gap-2 border-l border-slate-200 pl-5">
+            <HiOutlineLocationMarker className="text-lg text-[#ff5a36]" />
+            <select
+              value={location}
+              onChange={(e) => setSelectedLocation(e.target.value)}
+              className="cursor-pointer bg-transparent text-sm font-semibold text-slate-700 outline-none transition hover:text-slate-900"
+              aria-label="Location"
+            >
+              {locationOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
 
         {showSearch ? (
           <div className="flex flex-1 justify-center">
