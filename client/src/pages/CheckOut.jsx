@@ -22,12 +22,7 @@ const buildMapUrl = (latitude, longitude) => {
   if (!Number.isFinite(lat) || !Number.isFinite(lon)) return "";
 
   const delta = 0.01;
-  const bbox = [
-    lon - delta,
-    lat - delta,
-    lon + delta,
-    lat + delta,
-  ].join(",");
+  const bbox = [lon - delta, lat - delta, lon + delta, lat + delta].join(",");
 
   return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lon}`;
 };
@@ -53,7 +48,8 @@ const CheckOut = () => {
   const subtotal = useMemo(
     () =>
       items.reduce(
-        (total, item) => total + Number(item.price || 0) * Number(item.quantity || 0),
+        (total, item) =>
+          total + Number(item.price || 0) * Number(item.quantity || 0),
         0,
       ),
     [items],
@@ -117,7 +113,10 @@ const CheckOut = () => {
           updateField("address", address);
           toast.success("Delivery location detected");
         } catch {
-          updateField("address", `Lat ${latitude.toFixed(6)}, Lng ${longitude.toFixed(6)}`);
+          updateField(
+            "address",
+            `Lat ${latitude.toFixed(6)}, Lng ${longitude.toFixed(6)}`,
+          );
           toast.success("Location detected");
         } finally {
           setLocationLoading(false);
@@ -125,7 +124,9 @@ const CheckOut = () => {
       },
       () => {
         setLocationLoading(false);
-        toast.error("Please allow location access or enter your address manually");
+        toast.error(
+          "Please allow location access or enter your address manually",
+        );
       },
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 },
     );
@@ -149,6 +150,13 @@ const CheckOut = () => {
       return;
     }
 
+    if (location?.latitude == null || location?.longitude == null) {
+      toast.error(
+        "Please allow location access or refresh to capture your coordinates",
+      );
+      return;
+    }
+
     setOrderLoading(true);
     try {
       await axios.post(
@@ -160,8 +168,8 @@ const CheckOut = () => {
           })),
           deliveryAddress: {
             text: form.address.trim(),
-            latitude: location?.latitude,
-            longitude: location?.longitude,
+            latitude: location.latitude,
+            longitude: location.longitude,
           },
           paymentMethod: form.paymentMethod,
           note: form.note.trim(),
@@ -170,10 +178,6 @@ const CheckOut = () => {
         },
         { withCredentials: true },
       );
-
-      await axios.get(`${serverUrl}/api/orders/my-orders`, {
-        withCredentials: true,
-      });
 
       dispatch(clearCart());
       toast.success("Order placed successfully");
@@ -199,7 +203,10 @@ const CheckOut = () => {
           Back to cart
         </button>
 
-        <form onSubmit={placeOrder} className="grid gap-5 lg:grid-cols-[1fr_380px]">
+        <form
+          onSubmit={placeOrder}
+          className="grid gap-5 lg:grid-cols-[1fr_380px]"
+        >
           <section className="rounded-[28px] border border-slate-200/80 bg-white p-5 shadow-[0_18px_55px_rgba(15,23,42,0.06)]">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
@@ -226,24 +233,32 @@ const CheckOut = () => {
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               <label className="block">
-                <span className="text-xs font-bold text-slate-600">Full name</span>
+                <span className="text-xs font-bold text-slate-600">
+                  Full name
+                </span>
                 <input
                   type="text"
                   value={form.fullName}
-                  onChange={(event) => updateField("fullName", event.target.value)}
+                  onChange={(event) =>
+                    updateField("fullName", event.target.value)
+                  }
                   className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#ff5a36] focus:bg-white focus:ring-2 focus:ring-[#ff5a36]/10"
                   placeholder="Your name"
                 />
               </label>
 
               <label className="block">
-                <span className="text-xs font-bold text-slate-600">Phone number</span>
+                <span className="text-xs font-bold text-slate-600">
+                  Phone number
+                </span>
                 <div className="relative mt-1">
                   <HiPhone className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="tel"
                     value={form.phone}
-                    onChange={(event) => updateField("phone", event.target.value)}
+                    onChange={(event) =>
+                      updateField("phone", event.target.value)
+                    }
                     className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#ff5a36] focus:bg-white focus:ring-2 focus:ring-[#ff5a36]/10"
                     placeholder="03xx xxxxxxx"
                   />
@@ -275,12 +290,16 @@ const CheckOut = () => {
             </div>
 
             <label className="mt-5 block">
-              <span className="text-xs font-bold text-slate-600">Delivery address</span>
+              <span className="text-xs font-bold text-slate-600">
+                Delivery address
+              </span>
               <div className="relative mt-1">
                 <HiLocationMarker className="pointer-events-none absolute left-4 top-3.5 text-slate-400" />
                 <textarea
                   value={form.address}
-                  onChange={(event) => updateField("address", event.target.value)}
+                  onChange={(event) =>
+                    updateField("address", event.target.value)
+                  }
                   rows={4}
                   className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#ff5a36] focus:bg-white focus:ring-2 focus:ring-[#ff5a36]/10"
                   placeholder="House, street, area, city"
@@ -289,7 +308,9 @@ const CheckOut = () => {
             </label>
 
             <label className="mt-4 block">
-              <span className="text-xs font-bold text-slate-600">Delivery note</span>
+              <span className="text-xs font-bold text-slate-600">
+                Delivery note
+              </span>
               <input
                 type="text"
                 value={form.note}
@@ -309,7 +330,9 @@ const CheckOut = () => {
                   className="accent-[#ff5a36]"
                 />
                 <HiCash className="text-xl text-[#ff5a36]" />
-                <span className="text-sm font-extrabold text-slate-800">Cash on delivery</span>
+                <span className="text-sm font-extrabold text-slate-800">
+                  Cash on delivery
+                </span>
               </label>
             </div>
           </section>
@@ -326,7 +349,11 @@ const CheckOut = () => {
                   <div key={item.itemId} className="flex items-center gap-3">
                     <div className="h-14 w-14 overflow-hidden rounded-2xl bg-slate-100">
                       {item.image ? (
-                        <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="h-full w-full object-cover"
+                        />
                       ) : null}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -334,7 +361,8 @@ const CheckOut = () => {
                         {item.name}
                       </p>
                       <p className="truncate text-xs font-semibold text-slate-500">
-                        {item.quantity} x PKR {Number(item.price || 0).toLocaleString()}
+                        {item.quantity} x PKR{" "}
+                        {Number(item.price || 0).toLocaleString()}
                       </p>
                     </div>
                   </div>
