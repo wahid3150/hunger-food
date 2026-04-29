@@ -1,6 +1,7 @@
 import Item from "../models/itemModel.js";
 import Order from "../models/orderModel.js";
 import Shop from "../models/shopModel.js";
+import { io } from "../server.js";
 
 export const createOrder = async (req, res) => {
   try {
@@ -110,6 +111,18 @@ export const createOrder = async (req, res) => {
       });
 
       createdOrders.push(order);
+
+      // Emit new order event to shop owner
+      const shop = await Shop.findById(shopId);
+      if (shop) {
+        io.to(shop.owner.toString()).emit("new_order", {
+          orderId: order._id,
+          status: order.status,
+          totalAmount: order.totalAmount,
+          customerName: order.customerName,
+          message: `New order received: ${order.customerName}`,
+        });
+      }
     }
 
     res.status(201).json({
@@ -261,6 +274,30 @@ export const updateOrderStatus = async (req, res) => {
     }
 
     await order.save();
+
+    // Emit order status update to customer
+    io.to(order.user.toString()).emit("order_status_updated", {
+      orderId: order._id,
+      status: order.status,
+      message: `Your order status changed to: ${status}`,
+    });
+
+    // Emit order status update to delivery boy if assigned
+    if (order.deliveryBoy) {
+      io.to(order.deliveryBoy.toString()).emit("order_status_updated", {
+        orderId: order._id,
+        status: order.status,
+        message: `Order status changed to: ${status}`,
+      });
+    }
+
+    // Emit order status update to shop owner
+    io.to(shop.owner.toString()).emit("order_status_updated", {
+      orderId: order._id,
+      status: order.status,
+      message: `Order status changed to: ${status}`,
+    });
+
     res.status(200).json({
       success: true,
       message: "Order status updated",
@@ -333,6 +370,21 @@ export const acceptOrder = async (req, res) => {
         message: "Order already assigned",
       });
     }
+
+    // Emit order accepted event to shop owner and customer
+    const shop = await Shop.findById(order.shop);
+    if (shop) {
+      io.to(shop.owner.toString()).emit("delivery_boy_assigned", {
+        orderId: order._id,
+        deliveryBoyId: riderId,
+        message: "A delivery boy has been assigned to this order",
+      });
+    }
+
+    io.to(order.user.toString()).emit("delivery_boy_assigned", {
+      orderId: order._id,
+      message: "Your order has been assigned to a delivery boy",
+    });
 
     res.status(200).json({
       success: true,
