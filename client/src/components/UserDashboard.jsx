@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
@@ -113,10 +119,7 @@ const UserDashboard = () => {
 
   const cartCount = useMemo(
     () =>
-      cartItems.reduce(
-        (count, item) => count + Number(item.quantity || 0),
-        0,
-      ),
+      cartItems.reduce((count, item) => count + Number(item.quantity || 0), 0),
     [cartItems],
   );
 
@@ -156,8 +159,9 @@ const UserDashboard = () => {
         return b.availableItemCount - a.availableItemCount;
       });
 
-    return (hasLocation ? rankedShops.filter((shop) => shop.isNearby) : rankedShops)
-      .slice(0, 10);
+    return (
+      hasLocation ? rankedShops.filter((shop) => shop.isNearby) : rankedShops
+    ).slice(0, 10);
   }, [hasLocation, itemCountsByShop, shopMatchesLocation, shops]);
 
   const visibleItems = useMemo(() => {
@@ -199,7 +203,11 @@ const UserDashboard = () => {
   }, [search]);
 
   const fetchItems = useCallback(async () => {
-    if (!activeShopId && page !== 1 && lastItemQueryRef.current !== itemQueryKey) {
+    if (
+      !activeShopId &&
+      page !== 1 &&
+      lastItemQueryRef.current !== itemQueryKey
+    ) {
       setPage(1);
       return;
     }
@@ -223,7 +231,9 @@ const UserDashboard = () => {
 
         if (pageCount <= 1) {
           setItems(firstItems);
-          setTotalItems(Number(firstResponse.data?.totalItems || firstItems.length));
+          setTotalItems(
+            Number(firstResponse.data?.totalItems || firstItems.length),
+          );
           setTotalPages(1);
           return;
         }
@@ -231,7 +241,11 @@ const UserDashboard = () => {
         const remainingResponses = await Promise.all(
           Array.from({ length: pageCount - 1 }, (_, index) =>
             axios.get(endpoint, {
-              params: { ...params, page: index + 2, limit: TOP_SHOP_ITEM_LIMIT },
+              params: {
+                ...params,
+                page: index + 2,
+                limit: TOP_SHOP_ITEM_LIMIT,
+              },
             }),
           ),
         );
@@ -240,7 +254,9 @@ const UserDashboard = () => {
           ...remainingResponses.flatMap((res) => res.data?.items || []),
         ];
         setItems(allShopItems);
-        setTotalItems(Number(firstResponse.data?.totalItems || allShopItems.length));
+        setTotalItems(
+          Number(firstResponse.data?.totalItems || allShopItems.length),
+        );
         setTotalPages(1);
         return;
       }
@@ -269,7 +285,9 @@ const UserDashboard = () => {
       setTotalItems(Number(res.data?.totalItems || 0));
       setTotalPages(Number(res.data?.totalPages || 1));
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to load menu items");
+      toast.error(
+        error?.response?.data?.message || "Failed to load menu items",
+      );
       setItems([]);
       setTotalItems(0);
       setTotalPages(1);
@@ -415,7 +433,9 @@ const UserDashboard = () => {
 
       if (shopId) {
         if (!selectedShop || selectedShop._id !== shopId) {
-          const shopResponse = await axios.get(`${serverUrl}/api/shop/shops/${shopId}`);
+          const shopResponse = await axios.get(
+            `${serverUrl}/api/shop/shops/${shopId}`,
+          );
           setSelectedShop({
             ...(shopResponse.data?.shop || detailItem.shop || {}),
             items: shopResponse.data?.items || [],
@@ -453,7 +473,9 @@ const UserDashboard = () => {
         .slice(0, 8);
       setSimilarItems(sameCategoryItems);
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to load item details");
+      toast.error(
+        error?.response?.data?.message || "Failed to load item details",
+      );
     } finally {
       setSelectedItemLoading(false);
     }
@@ -492,80 +514,81 @@ const UserDashboard = () => {
       <article
         key={item._id}
         onClick={() => openItemDetails(item)}
-        className="group flex h-full min-h-[388px] cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.04)] transition hover:-translate-y-1 hover:border-[#ff5a36]/30 hover:shadow-[0_18px_45px_rgba(15,23,42,0.10)]"
+        className="group flex h-full min-h-[400px] cursor-pointer flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white to-slate-50/50 shadow-md hover:shadow-xl transition hover:-translate-y-2 hover:border-[#ff5a36]/40 duration-300"
       >
-        <div className="relative h-44 w-full flex-shrink-0 overflow-hidden bg-slate-100">
+        <div className="relative h-48 w-full flex-shrink-0 overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
           {item.image ? (
             <img
               src={item.image}
               alt={item.name}
-              className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+              className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
             />
           ) : (
             <div className="grid h-full place-items-center text-slate-300">
               <HiOutlineShoppingBag className="text-5xl" />
             </div>
           )}
-          <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2 py-1 text-[11px] font-extrabold text-slate-700 shadow-sm">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition" />
+          <span className="absolute left-3 top-3 rounded-full bg-white/95 backdrop-blur px-3 py-1.5 text-xs font-extrabold text-slate-700 shadow-md border border-white/50">
             {titleCase(item.category)}
           </span>
           <button
             type="button"
             onClick={(event) => event.stopPropagation()}
-            className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-white/95 text-slate-400 shadow-sm transition hover:bg-[#fff7f3] hover:text-[#ff5a36]"
+            className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/95 backdrop-blur text-slate-400 shadow-md border border-white/50 transition hover:bg-[#fff7f3] hover:text-[#ff5a36] hover:scale-110 group-hover:text-[#ff5a36]"
             aria-label={`Save ${item.name}`}
           >
-            <HiHeart />
+            <HiHeart className="text-lg" />
           </button>
         </div>
 
-        <div className="flex flex-1 flex-col p-4">
+        <div className="flex flex-1 flex-col p-5">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h3 className="truncate text-base font-extrabold capitalize text-slate-900">
+              <h3 className="truncate text-base font-black capitalize text-slate-900">
                 {item.name}
               </h3>
-              <p className="mt-1 truncate text-xs font-semibold text-slate-500">
+              <p className="mt-1.5 truncate text-xs font-semibold text-slate-500">
                 {item.shop?.name || selectedShop?.name || "Nearby shop"}
               </p>
             </div>
             <span
-              className={`rounded-full px-2 py-1 text-[10px] font-extrabold ${
+              className={`rounded-full px-2.5 py-1 text-xs font-extrabold whitespace-nowrap border flex-shrink-0 ${
                 item.foodType === "veg"
-                  ? "bg-emerald-50 text-emerald-600"
-                  : "bg-orange-50 text-orange-600"
+                  ? "bg-emerald-50 text-emerald-600 border-emerald-200"
+                  : "bg-orange-50 text-orange-600 border-orange-200"
               }`}
             >
               {FOOD_TYPE_LABELS[item.foodType] || "Food"}
             </span>
           </div>
 
-          <div className="mt-4 flex items-center justify-between gap-3">
-            <p className="text-lg font-extrabold text-[#ff5a36]">
+          <div className="mt-5 flex items-center justify-between gap-3">
+            <p className="text-xl font-black text-[#ff5a36]">
               {formatPrice(item.price)}
             </p>
             <div
-              className="flex items-center rounded-full border border-slate-200 bg-slate-50"
+              className="flex items-center rounded-full border-2 border-slate-200 bg-white hover:border-[#ff5a36] transition"
               onClick={(event) => event.stopPropagation()}
             >
               <button
                 type="button"
                 onClick={() => updateQuantity(item._id, -1)}
-                className="grid h-8 w-8 place-items-center text-slate-500 transition hover:text-[#ff5a36]"
+                className="grid h-8 w-8 place-items-center text-slate-400 transition hover:text-[#ff5a36] hover:bg-[#fff7f3] rounded-l-lg"
                 aria-label={`Decrease ${item.name}`}
               >
-                <HiMinus />
+                <HiMinus className="text-sm" />
               </button>
-              <span className="w-7 text-center text-sm font-extrabold text-slate-800">
+              <span className="w-8 text-center text-sm font-black text-slate-800">
                 {quantity}
               </span>
               <button
                 type="button"
                 onClick={() => updateQuantity(item._id, 1)}
-                className="grid h-8 w-8 place-items-center text-slate-500 transition hover:text-[#ff5a36]"
+                className="grid h-8 w-8 place-items-center text-slate-400 transition hover:text-[#ff5a36] hover:bg-[#fff7f3] rounded-r-lg"
                 aria-label={`Increase ${item.name}`}
               >
-                <HiPlus />
+                <HiPlus className="text-sm" />
               </button>
             </div>
           </div>
@@ -576,9 +599,9 @@ const UserDashboard = () => {
               event.stopPropagation();
               addMenuItemToCart(item);
             }}
-            className="mt-auto inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 text-sm font-extrabold text-white shadow-sm transition hover:bg-[#ff5a36]"
+            className="mt-auto inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-slate-900 to-slate-800 px-4 text-sm font-extrabold text-white shadow-md transition hover:shadow-lg hover:from-[#ff5a36] hover:to-[#ff4420] duration-300"
           >
-            <HiShoppingCart />
+            <HiShoppingCart className="text-sm" />
             Add to cart
           </button>
         </div>
@@ -612,41 +635,43 @@ const UserDashboard = () => {
     ));
 
   return (
-    <div className="min-h-screen bg-[#f6f7fb]">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
       <DashboardNavbar
         searchValue={search}
         onSearchChange={setSearch}
         onOrdersClick={openOrders}
       />
 
-      <main className="mx-auto w-full max-w-7xl px-4 pb-10 pt-6 sm:px-6">
+      <main className="mx-auto w-full max-w-7xl px-4 pb-10 pt-8 sm:px-6">
         {showOrders && (
-          <section className="rounded-[32px] border border-slate-200/80 bg-white p-5 shadow-[0_18px_55px_rgba(15,23,42,0.06)]">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <section className="rounded-[32px] border border-[#ff5a36]/20 bg-gradient-to-br from-white to-slate-50/50 p-6 shadow-[0_20px_60px_rgba(255,90,54,0.08)]">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-xs font-extrabold uppercase tracking-wide text-[#ff5a36]">
-                  Order history
-                </p>
-                <h1 className="mt-1 text-3xl font-black tracking-tight text-slate-950">
+                <div className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff5a36]/10 to-orange-100/50 px-4 py-2 text-xs font-extrabold uppercase tracking-wider text-[#ff5a36] border border-[#ff5a36]/20">
+                  📋 Order history
+                </div>
+                <h1 className="mt-3 text-4xl font-black tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
                   My orders
                 </h1>
-                <p className="mt-1 text-sm font-semibold text-slate-500">
-                  Track orders placed across shops.
+                <p className="mt-2 text-sm font-semibold text-slate-500">
+                  Track and manage orders placed across shops.
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={fetchMyOrders}
-                  className="inline-flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-100"
+                  className="inline-flex h-11 items-center gap-2 rounded-2xl border-2 border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 shadow-sm transition hover:border-[#ff5a36] hover:bg-[#fff7f3] hover:text-[#ff5a36] hover:shadow-md"
                 >
-                  <HiOutlineRefresh className={ordersLoading ? "animate-spin" : ""} />
+                  <HiOutlineRefresh
+                    className={ordersLoading ? "animate-spin" : ""}
+                  />
                   Refresh
                 </button>
                 <button
                   type="button"
                   onClick={closeOrders}
-                  className="inline-flex h-11 items-center gap-2 rounded-2xl bg-slate-950 px-4 text-sm font-extrabold text-white transition hover:bg-[#ff5a36]"
+                  className="inline-flex h-11 items-center gap-2 rounded-2xl bg-gradient-to-r from-slate-900 to-slate-800 px-5 text-sm font-extrabold text-white shadow-lg transition hover:shadow-xl hover:from-[#ff5a36] hover:to-[#ff4420]"
                 >
                   <HiArrowLeft />
                   Back to food
@@ -657,12 +682,17 @@ const UserDashboard = () => {
             <div className="mt-6 space-y-4">
               {ordersLoading ? (
                 [1, 2, 3].map((item) => (
-                  <div key={item} className="h-32 animate-pulse rounded-3xl bg-slate-100" />
+                  <div
+                    key={item}
+                    className="h-32 animate-pulse rounded-3xl bg-slate-100"
+                  />
                 ))
               ) : orders.length === 0 ? (
                 <div className="rounded-3xl border border-slate-200 bg-slate-50 px-5 py-12 text-center">
                   <HiOutlineClipboardList className="mx-auto text-5xl text-slate-300" />
-                  <p className="mt-3 font-extrabold text-slate-800">No orders yet</p>
+                  <p className="mt-3 font-extrabold text-slate-800">
+                    No orders yet
+                  </p>
                   <p className="mt-1 text-sm font-semibold text-slate-500">
                     Your placed orders will appear here.
                   </p>
@@ -671,11 +701,11 @@ const UserDashboard = () => {
                 orders.map((order) => (
                   <article
                     key={order._id}
-                    className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm"
+                    className="rounded-3xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/50 p-5 shadow-md hover:shadow-lg transition duration-300 hover:border-[#ff5a36]/30"
                   >
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                       <div className="flex gap-3">
-                        <div className="h-16 w-16 overflow-hidden rounded-2xl bg-slate-100">
+                        <div className="h-16 w-16 overflow-hidden rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 ring-2 ring-[#ff5a36]/10 flex-shrink-0">
                           {order.shop?.image ? (
                             <img
                               src={order.shop.image}
@@ -688,16 +718,30 @@ const UserDashboard = () => {
                           <h2 className="text-base font-black text-slate-950">
                             {order.shop?.name || "Shop order"}
                           </h2>
-                          <p className="mt-1 text-xs font-semibold text-slate-500">
+                          <p className="mt-1 text-xs font-semibold text-slate-400">
                             {new Date(order.createdAt).toLocaleString()}
                           </p>
-                          <span className="mt-2 inline-flex rounded-full bg-[#fff0eb] px-3 py-1 text-xs font-extrabold capitalize text-[#ff5a36]">
-                            {String(order.status || "pending").replaceAll("_", " ")}
+                          <span
+                            className={`mt-2 inline-flex rounded-full px-3 py-1 text-xs font-extrabold capitalize border ${
+                              String(order.status || "pending") === "delivered"
+                                ? "bg-emerald-50 text-emerald-600 border-emerald-200"
+                                : String(order.status || "pending") ===
+                                    "pending"
+                                  ? "bg-yellow-50 text-yellow-600 border-yellow-200"
+                                  : "bg-[#fff0eb] text-[#ff5a36] border-[#ff5a36]/30"
+                            }`}
+                          >
+                            {String(order.status || "pending").replaceAll(
+                              "_",
+                              " ",
+                            )}
                           </span>
                         </div>
                       </div>
                       <div className="text-left lg:text-right">
-                        <p className="text-xs font-bold text-slate-400">Total</p>
+                        <p className="text-xs font-bold text-slate-400">
+                          Total
+                        </p>
                         <p className="text-xl font-black text-slate-950">
                           PKR {Number(order.totalAmount || 0).toLocaleString()}
                         </p>
@@ -710,15 +754,20 @@ const UserDashboard = () => {
                             key={`${order._id}-${item.item}`}
                             className="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-2 text-sm"
                           >
-                            <span className="font-bold capitalize text-slate-700">{item.name}</span>
+                            <span className="font-bold capitalize text-slate-700">
+                              {item.name}
+                            </span>
                             <span className="font-semibold text-slate-500">
-                              {item.quantity} x PKR {Number(item.price || 0).toLocaleString()}
+                              {item.quantity} x PKR{" "}
+                              {Number(item.price || 0).toLocaleString()}
                             </span>
                           </div>
                         ))}
                       </div>
                       <div className="rounded-2xl bg-slate-50 p-3">
-                        <p className="text-xs font-bold text-slate-400">Delivery address</p>
+                        <p className="text-xs font-bold text-slate-400">
+                          Delivery address
+                        </p>
                         <p className="mt-1 text-sm font-semibold text-slate-600">
                           {order.deliveryAddress?.text || "No address saved"}
                         </p>
@@ -732,141 +781,146 @@ const UserDashboard = () => {
         )}
 
         {!showOrders && isHomeView && (
-        <section className="rounded-3xl border border-slate-200/80 bg-white px-4 py-5 shadow-[0_18px_55px_rgba(15,23,42,0.06)] sm:px-5">
-          <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-[#fff0eb] px-3 py-1 text-xs font-extrabold text-[#ff5a36]">
-                <HiFire />
-                {hasLocation ? `Near ${detectedCity}` : "Enable location for nearby picks"}
+          <section className="rounded-3xl border border-[#ff5a36]/20 bg-gradient-to-br from-white via-white to-slate-50/30 px-5 py-6 shadow-[0_20px_60px_rgba(255,90,54,0.08)] sm:px-6">
+            <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff5a36]/10 to-orange-100/50 px-4 py-2 text-xs font-extrabold text-[#ff5a36] border border-[#ff5a36]/20">
+                  <HiFire className="text-lg" />
+                  {hasLocation
+                    ? `Near ${detectedCity}`
+                    : "Enable location for nearby picks"}
+                </div>
+                <h2 className="mt-3 text-3xl font-black tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
+                  🏪 Featured Shops
+                </h2>
+                <p className="mt-2 text-sm font-semibold text-slate-500">
+                  Top-rated shops ranked by menu variety and proximity
+                </p>
               </div>
-              <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-slate-950">
-                Suggested shops
-              </h2>
-              <p className="mt-1 text-sm font-semibold text-slate-500">
-                Location-based shops ranked by available menu items
-              </p>
+              <button
+                type="button"
+                onClick={refreshDashboard}
+                className="inline-flex h-11 items-center gap-2 rounded-2xl border-2 border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 shadow-sm transition hover:border-[#ff5a36] hover:bg-[#fff7f3] hover:text-[#ff5a36] hover:shadow-md"
+              >
+                <HiOutlineRefresh
+                  className={shopsLoading || itemsLoading ? "animate-spin" : ""}
+                />
+                Refresh
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={refreshDashboard}
-              className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold text-slate-600 transition hover:border-[#ff5a36]/30 hover:bg-[#fff7f3] hover:text-[#ff5a36]"
-            >
-              <HiOutlineRefresh className={shopsLoading || itemsLoading ? "animate-spin" : ""} />
-              Refresh
-            </button>
-          </div>
 
-          <div className="flex snap-x gap-4 overflow-x-auto pb-2 [scrollbar-width:thin]">
-            {shopsLoading
-              ? renderShopSkeletons()
-              : topShops.map((shop, index) => (
-                  <button
-                    key={shop._id}
-                    type="button"
-                    onClick={() => openShop(shop)}
-                    className={`group relative flex h-[270px] w-[280px] flex-none snap-start flex-col overflow-hidden rounded-3xl border bg-white text-left shadow-sm transition hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(15,23,42,0.14)] sm:w-[330px] ${
-                      activeShopId === shop._id
-                        ? "border-[#ff5a36] ring-2 ring-[#ff5a36]/15"
-                        : "border-slate-200"
-                    }`}
-                  >
-                    <div className="relative h-44 w-full flex-shrink-0 overflow-hidden bg-slate-100">
-                      {shop.image ? (
-                        <img
-                          src={shop.image}
-                          alt={shop.name}
-                          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="grid h-full place-items-center text-slate-400">
-                          <HiOutlineShoppingBag className="text-4xl" />
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/45 via-transparent to-transparent" />
-                      <span className="absolute left-3 top-3 rounded-full bg-slate-950/80 px-2.5 py-1 text-xs font-extrabold text-white backdrop-blur">
-                        #{index + 1}
-                      </span>
-                      {shop.isNearby && (
-                        <span className="absolute right-3 top-3 rounded-full bg-[#ff5a36] px-2.5 py-1 text-xs font-extrabold text-white shadow-sm">
-                          Near you
+            <div className="flex snap-x gap-4 overflow-x-auto pb-2 [scrollbar-width:thin]">
+              {shopsLoading
+                ? renderShopSkeletons()
+                : topShops.map((shop, index) => (
+                    <button
+                      key={shop._id}
+                      type="button"
+                      onClick={() => openShop(shop)}
+                      className={`group relative flex h-[280px] w-[280px] flex-none snap-start flex-col overflow-hidden rounded-3xl border bg-gradient-to-br from-white to-slate-50/50 text-left shadow-md transition hover:-translate-y-2 hover:shadow-xl sm:w-[330px] ${
+                        activeShopId === shop._id
+                          ? "border-2 border-[#ff5a36] ring-2 ring-[#ff5a36]/20 from-white to-[#fff7f3]"
+                          : "border-slate-200/80 hover:border-[#ff5a36]/50"
+                      }`}
+                    >
+                      <div className="relative h-44 w-full flex-shrink-0 overflow-hidden bg-slate-100">
+                        {shop.image ? (
+                          <img
+                            src={shop.image}
+                            alt={shop.name}
+                            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="grid h-full place-items-center text-slate-400">
+                            <HiOutlineShoppingBag className="text-4xl" />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/45 via-transparent to-transparent" />
+                        <span className="absolute left-3 top-3 rounded-full bg-gradient-to-r from-slate-950 to-slate-800 px-3 py-1.5 text-xs font-extrabold text-white backdrop-blur shadow-lg">
+                          🏆 #{index + 1}
                         </span>
-                      )}
-                      <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-xs font-extrabold text-[#ff5a36] shadow-sm">
-                        <HiOutlineShoppingBag />
-                        {shop.availableItemCount} items
-                      </span>
-                    </div>
-                    <div className="flex flex-1 flex-col p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <h3 className="truncate text-lg font-extrabold text-slate-950">
-                            {shop.name}
-                          </h3>
-                          <p className="mt-1 flex items-center gap-1 truncate text-xs font-semibold text-slate-500">
-                            <HiLocationMarker className="text-[#ff5a36]" />
-                            {shop.city}, {shop.state}
-                          </p>
-                        </div>
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[11px] font-extrabold text-amber-600">
-                          <HiStar />
-                          4.8
+                        {shop.isNearby && (
+                          <span className="absolute right-3 top-3 rounded-full bg-gradient-to-r from-[#ff5a36] to-[#ff4420] px-3 py-1.5 text-xs font-extrabold text-white shadow-lg animate-pulse">
+                            📍 Near you
+                          </span>
+                        )}
+                        <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-white/95 backdrop-blur px-3 py-1.5 text-xs font-extrabold text-[#ff5a36] shadow-md border border-white/50">
+                          <HiOutlineShoppingBag className="text-sm" />
+                          {shop.availableItemCount} items
                         </span>
                       </div>
-                      <p className="mt-auto inline-flex items-center gap-1 text-xs font-bold text-slate-400">
-                        <HiClock />
-                        Tap to view available menu
-                      </p>
-                    </div>
-                  </button>
-                ))}
-          </div>
-
-          {!shopsLoading && topShops.length === 0 && (
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-10 text-center">
-              <HiOutlineShoppingBag className="mx-auto text-4xl text-slate-300" />
-              <p className="mt-3 font-extrabold text-slate-800">
-                {hasLocation ? "No nearby shops found" : "No shops found"}
-              </p>
-              <p className="mt-1 text-sm font-medium text-slate-500">
-                {hasLocation
-                  ? "We could not match shops to your detected city yet."
-                  : "Allow location access or try a different search."}
-              </p>
+                      <div className="flex flex-1 flex-col p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <h3 className="truncate text-lg font-black text-slate-950">
+                              {shop.name}
+                            </h3>
+                            <p className="mt-1.5 flex items-center gap-1.5 truncate text-xs font-semibold text-slate-500">
+                              <HiLocationMarker className="text-[#ff5a36] text-sm flex-shrink-0" />
+                              {shop.city}, {shop.state}
+                            </p>
+                          </div>
+                          <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-50 to-yellow-50 px-2.5 py-1.5 text-xs font-extrabold text-amber-600 border border-amber-200/50">
+                            <HiStar className="text-sm" />
+                            4.8
+                          </span>
+                        </div>
+                        <p className="mt-auto inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 group-hover:text-[#ff5a36] transition">
+                          <HiClock className="text-sm" />
+                          View menu →
+                        </p>
+                      </div>
+                    </button>
+                  ))}
             </div>
-          )}
-        </section>
+
+            {!shopsLoading && topShops.length === 0 && (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-10 text-center">
+                <HiOutlineShoppingBag className="mx-auto text-4xl text-slate-300" />
+                <p className="mt-3 font-extrabold text-slate-800">
+                  {hasLocation ? "No nearby shops found" : "No shops found"}
+                </p>
+                <p className="mt-1 text-sm font-medium text-slate-500">
+                  {hasLocation
+                    ? "We could not match shops to your detected city yet."
+                    : "Allow location access or try a different search."}
+                </p>
+              </div>
+            )}
+          </section>
         )}
 
         {!showOrders && selectedShop && (
-          <section className="mt-6 overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-[0_18px_55px_rgba(15,23,42,0.06)]">
+          <section className="mt-8 overflow-hidden rounded-3xl border border-[#ff5a36]/20 bg-gradient-to-br from-white via-slate-50/30 to-white shadow-[0_20px_60px_rgba(255,90,54,0.08)]">
             <div className="flex flex-col md:flex-row md:items-stretch">
-              <div className="h-44 w-full overflow-hidden bg-slate-100 md:h-auto md:w-56">
+              <div className="h-48 w-full overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 md:h-auto md:w-64 relative group">
                 {selectedShop.image ? (
                   <img
                     src={selectedShop.image}
                     alt={selectedShop.name}
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-cover group-hover:scale-105 transition duration-500"
                   />
                 ) : null}
+                <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent" />
               </div>
-              <div className="flex min-w-0 flex-1 flex-col gap-4 p-5 md:flex-row md:items-center">
+              <div className="flex min-w-0 flex-1 flex-col gap-5 p-6 md:flex-row md:items-center md:justify-between">
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-extrabold uppercase tracking-wide text-[#ff5a36]">
-                    Selected shop
-                  </p>
-                  <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-slate-950">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff5a36]/10 to-orange-100/50 px-4 py-2 text-xs font-extrabold uppercase tracking-wider text-[#ff5a36] border border-[#ff5a36]/20">
+                    ✓ Currently selected
+                  </div>
+                  <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950">
                     {selectedShop.name}
                   </h2>
                   <p className="mt-2 line-clamp-2 text-sm font-semibold text-slate-500">
-                    {selectedShop.address}, {selectedShop.city}
+                    📍 {selectedShop.address}, {selectedShop.city}
                   </p>
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[#fff0eb] px-3 py-1 text-xs font-extrabold text-[#ff5a36]">
-                      <HiOutlineShoppingBag />
-                      {selectedShopItems.length} available
+                    <span className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff5a36]/10 to-orange-100/50 px-3.5 py-1.5 text-xs font-extrabold text-[#ff5a36] border border-[#ff5a36]/20">
+                      <HiOutlineShoppingBag className="text-sm" />
+                      {selectedShopItems.length} items
                     </span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-extrabold text-slate-600">
-                      <HiLocationMarker />
+                    <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3.5 py-1.5 text-xs font-extrabold text-slate-600 border border-slate-200">
+                      <HiLocationMarker className="text-sm" />
                       {selectedShop.city}
                     </span>
                   </div>
@@ -874,7 +928,7 @@ const UserDashboard = () => {
                 <button
                   type="button"
                   onClick={closeShop}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold text-slate-600 transition hover:border-[#ff5a36]/30 hover:bg-[#fff7f3] hover:text-[#ff5a36]"
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border-2 border-slate-200 bg-white px-5 text-sm font-bold text-slate-600 shadow-sm transition hover:border-[#ff5a36] hover:bg-[#fff7f3] hover:text-[#ff5a36] hover:shadow-md"
                 >
                   <HiX />
                   Show all shops
@@ -887,7 +941,9 @@ const UserDashboard = () => {
         {!showOrders && selectedItemLoading && !selectedItem && (
           <section className="mt-7 rounded-3xl border border-slate-200 bg-white px-5 py-10 text-center shadow-sm">
             <HiOutlineRefresh className="mx-auto animate-spin text-3xl text-[#ff5a36]" />
-            <p className="mt-3 text-sm font-bold text-slate-600">Loading item details</p>
+            <p className="mt-3 text-sm font-bold text-slate-600">
+              Loading item details
+            </p>
           </section>
         )}
 
@@ -928,7 +984,9 @@ const UserDashboard = () => {
                     </h1>
                     <p className="mt-2 flex items-center gap-2 text-sm font-semibold text-slate-500">
                       <HiOutlineShoppingBag className="text-[#ff5a36]" />
-                      {selectedItem.shop?.name || selectedShop?.name || "Nearby shop"}
+                      {selectedItem.shop?.name ||
+                        selectedShop?.name ||
+                        "Nearby shop"}
                     </p>
                   </div>
                   <span
@@ -958,7 +1016,9 @@ const UserDashboard = () => {
                     </p>
                   </div>
                   <div className="rounded-2xl bg-slate-50 p-4">
-                    <p className="text-xs font-bold text-slate-400">Food type</p>
+                    <p className="text-xs font-bold text-slate-400">
+                      Food type
+                    </p>
                     <p className="mt-1 font-extrabold text-slate-800">
                       {FOOD_TYPE_LABELS[selectedItem.foodType] || "Food"}
                     </p>
@@ -980,7 +1040,10 @@ const UserDashboard = () => {
               <div className="flex items-end justify-between gap-3">
                 <div>
                   <h2 className="text-xl font-extrabold text-slate-950">
-                    More from {selectedItem.shop?.name || selectedShop?.name || "this shop"}
+                    More from{" "}
+                    {selectedItem.shop?.name ||
+                      selectedShop?.name ||
+                      "this shop"}
                   </h2>
                   <p className="mt-1 text-sm font-semibold text-slate-500">
                     Other available items listed by this shop
@@ -1023,131 +1086,142 @@ const UserDashboard = () => {
         )}
 
         {!showOrders && !selectedItem && (
-        <section className="mt-7">
-          <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">
-                {selectedShop
-                  ? `${selectedShop.name} menu`
-                  : hasLocation
-                    ? `Items near ${detectedCity}`
-                    : "Explore menu"}
-              </h2>
-              <p className="mt-1 text-sm font-semibold text-slate-500">
-                {activeShopId
-                  ? `Showing ${visibleItems.length} of ${totalItems} available item${totalItems !== 1 ? "s" : ""}`
-                  : `Showing ${visibleItems.length} location-based item${visibleItems.length !== 1 ? "s" : ""}`}
-              </p>
+          <section className="mt-10">
+            <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <h2 className="text-3xl font-black tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
+                  {selectedShop
+                    ? `🍽️ ${selectedShop.name} Menu`
+                    : hasLocation
+                      ? `🔥 Items near ${detectedCity}`
+                      : "📱 Explore Menu"}
+                </h2>
+                <p className="mt-2 text-sm font-semibold text-slate-500">
+                  {activeShopId
+                    ? `Showing ${visibleItems.length} of ${totalItems} available item${totalItems !== 1 ? "s" : ""}`
+                    : `Showing ${visibleItems.length} location-based item${visibleItems.length !== 1 ? "s" : ""}`}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2 rounded-2xl border-2 border-slate-200/80 bg-white p-3 shadow-md">
+                <label className="relative">
+                  <select
+                    value={category}
+                    onChange={(event) => setCategory(event.target.value)}
+                    className="h-10 appearance-none rounded-xl border-2 border-slate-200 bg-slate-50 pl-3 pr-9 text-sm font-bold text-slate-600 outline-none transition hover:border-[#ff5a36] focus:border-[#ff5a36] focus:bg-white hover:bg-white"
+                    aria-label="Filter by category"
+                  >
+                    <option value="">All categories</option>
+                    {CATEGORIES.map((option) => (
+                      <option key={option} value={option}>
+                        {titleCase(option)}
+                      </option>
+                    ))}
+                  </select>
+                  <HiChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                </label>
+
+                <label className="relative">
+                  <select
+                    value={foodType}
+                    onChange={(event) => setFoodType(event.target.value)}
+                    className="h-10 appearance-none rounded-xl border-2 border-slate-200 bg-slate-50 pl-3 pr-9 text-sm font-bold text-slate-600 outline-none transition hover:border-[#ff5a36] focus:border-[#ff5a36] focus:bg-white hover:bg-white"
+                    aria-label="Filter by food type"
+                  >
+                    <option value="">All types</option>
+                    <option value="veg">🥬 Veg</option>
+                    <option value="non-veg">🍗 Non-Veg</option>
+                  </select>
+                  <HiChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                </label>
+
+                <label className="relative">
+                  <select
+                    value={sort}
+                    onChange={(event) => setSort(event.target.value)}
+                    className="h-10 appearance-none rounded-xl border-2 border-slate-200 bg-slate-50 pl-3 pr-9 text-sm font-bold text-slate-600 outline-none transition hover:border-[#ff5a36] focus:border-[#ff5a36] focus:bg-white hover:bg-white"
+                    aria-label="Sort menu items"
+                  >
+                    {SORT_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <HiChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                </label>
+
+                {(search || category || foodType || sort !== "latest") && (
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="h-10 rounded-xl bg-gradient-to-r from-slate-900 to-slate-800 px-4 text-sm font-bold text-white transition hover:from-[#ff5a36] hover:to-[#ff4420] shadow-md"
+                  >
+                    Clear filters
+                  </button>
+                )}
+              </div>
             </div>
 
-            <div className="flex flex-wrap gap-2 rounded-2xl border border-slate-200/80 bg-white p-2 shadow-sm">
-              <label className="relative">
-                <select
-                  value={category}
-                  onChange={(event) => setCategory(event.target.value)}
-                  className="h-10 appearance-none rounded-xl border border-transparent bg-slate-50 pl-3 pr-9 text-sm font-bold text-slate-600 outline-none transition hover:bg-slate-100 focus:border-[#ff5a36] focus:bg-white"
-                  aria-label="Filter by category"
-                >
-                  <option value="">All categories</option>
-                  {CATEGORIES.map((option) => (
-                    <option key={option} value={option}>
-                      {titleCase(option)}
-                    </option>
-                  ))}
-                </select>
-                <HiChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              </label>
+            {selectedShopLoading ? (
+              <div className="rounded-3xl border-2 border-slate-200 bg-gradient-to-br from-white to-slate-50 px-5 py-10 text-center shadow-md">
+                <HiOutlineRefresh className="mx-auto animate-spin text-4xl text-[#ff5a36]" />
+                <p className="mt-4 text-sm font-bold text-slate-600">
+                  Opening shop menu...
+                </p>
+              </div>
+            ) : (
+              <div className="grid auto-rows-fr gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {itemsLoading
+                  ? renderItemSkeletons()
+                  : visibleItems.map((item) => renderMenuCard(item))}
+              </div>
+            )}
 
-              <label className="relative">
-                <select
-                  value={foodType}
-                  onChange={(event) => setFoodType(event.target.value)}
-                  className="h-10 appearance-none rounded-xl border border-transparent bg-slate-50 pl-3 pr-9 text-sm font-bold text-slate-600 outline-none transition hover:bg-slate-100 focus:border-[#ff5a36] focus:bg-white"
-                  aria-label="Filter by food type"
-                >
-                  <option value="">All types</option>
-                  <option value="veg">Veg</option>
-                  <option value="non-veg">Non-Veg</option>
-                </select>
-                <HiChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              </label>
-
-              <label className="relative">
-                <select
-                  value={sort}
-                  onChange={(event) => setSort(event.target.value)}
-                  className="h-10 appearance-none rounded-xl border border-transparent bg-slate-50 pl-3 pr-9 text-sm font-bold text-slate-600 outline-none transition hover:bg-slate-100 focus:border-[#ff5a36] focus:bg-white"
-                  aria-label="Sort menu items"
-                >
-                  {SORT_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                <HiChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              </label>
-
-              {(search || category || foodType || sort !== "latest") && (
-                <button
-                  type="button"
-                  onClick={clearFilters}
-                  className="h-10 rounded-xl bg-slate-900 px-4 text-sm font-bold text-white transition hover:bg-[#ff5a36]"
-                >
-                  Clear
-                </button>
+            {!itemsLoading &&
+              !selectedShopLoading &&
+              visibleItems.length === 0 && (
+                <div className="rounded-3xl border-2 border-slate-200 bg-gradient-to-br from-white to-slate-50/50 px-6 py-16 text-center shadow-md sm:col-span-2 lg:col-span-3 xl:col-span-4">
+                  <div className="text-6xl mb-3">🍽️</div>
+                  <p className="mt-2 font-black text-slate-800 text-lg">
+                    No menu items found
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-slate-500">
+                    {hasLocation && !activeShopId
+                      ? "No location-based items found yet. Try another search or category."
+                      : "Try clearing filters or choosing another shop."}
+                  </p>
+                </div>
               )}
-            </div>
-          </div>
 
-          {selectedShopLoading ? (
-            <div className="rounded-3xl border border-slate-200 bg-white px-5 py-8 text-center shadow-sm">
-              <HiOutlineRefresh className="mx-auto animate-spin text-3xl text-[#ff5a36]" />
-              <p className="mt-3 text-sm font-bold text-slate-600">Opening shop menu</p>
-            </div>
-          ) : (
-            <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {itemsLoading
-                ? renderItemSkeletons()
-                : visibleItems.map((item) => renderMenuCard(item))}
-            </div>
-          )}
-
-          {!itemsLoading && !selectedShopLoading && visibleItems.length === 0 && (
-            <div className="rounded-3xl border border-slate-200 bg-white px-5 py-12 text-center shadow-sm">
-              <HiOutlineShoppingBag className="mx-auto text-5xl text-slate-300" />
-              <p className="mt-3 font-extrabold text-slate-800">No menu items found</p>
-              <p className="mt-1 text-sm font-medium text-slate-500">
-                {hasLocation && !activeShopId
-                  ? "No location-based items found yet. Try another search or category."
-                  : "Try clearing filters or choosing another shop."}
-              </p>
-            </div>
-          )}
-
-          {!activeShopId && !itemsLoading && page < totalPages && visibleItems.length > 0 && (
-            <div className="mt-7 flex justify-center">
-              <button
-                type="button"
-                onClick={() => setPage((current) => current + 1)}
-                className="inline-flex h-12 items-center justify-center rounded-xl bg-slate-950 px-8 text-sm font-extrabold text-white shadow-[0_14px_35px_rgba(15,23,42,0.18)] transition hover:-translate-y-0.5 hover:bg-[#ff5a36]"
-              >
-                Load more
-              </button>
-            </div>
-          )}
-        </section>
+            {!activeShopId &&
+              !itemsLoading &&
+              page < totalPages &&
+              visibleItems.length > 0 && (
+                <div className="mt-8 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setPage((current) => current + 1)}
+                    className="inline-flex h-12 items-center justify-center rounded-2xl bg-gradient-to-r from-slate-900 to-slate-800 px-8 text-sm font-extrabold text-white shadow-lg transition hover:-translate-y-1 hover:shadow-xl hover:from-[#ff5a36] hover:to-[#ff4420] duration-300"
+                  >
+                    📍 Load more items
+                  </button>
+                </div>
+              )}
+          </section>
         )}
 
         {cartCount > 0 && (
           <button
             type="button"
             onClick={() => navigate("/cart")}
-            className="fixed bottom-5 left-1/2 z-40 inline-flex h-12 -translate-x-1/2 items-center gap-3 rounded-full bg-slate-900 px-5 text-sm font-extrabold text-white shadow-2xl transition hover:bg-slate-800 md:hidden"
+            className="fixed bottom-5 left-1/2 z-40 inline-flex h-12 -translate-x-1/2 items-center gap-3 rounded-full bg-gradient-to-r from-slate-900 to-slate-800 px-6 text-sm font-extrabold text-white shadow-2xl transition hover:-translate-y-1 hover:shadow-3xl hover:from-[#ff5a36] hover:to-[#ff4420] md:hidden"
           >
-            <HiShoppingCart />
+            <HiShoppingCart className="text-lg" />
             View cart
-            <span className="rounded-full bg-[#ff5a36] px-2 py-0.5 text-xs">{cartCount}</span>
+            <span className="rounded-full bg-[#ff5a36] px-2.5 py-0.5 text-xs font-black">
+              {cartCount}
+            </span>
           </button>
         )}
       </main>
