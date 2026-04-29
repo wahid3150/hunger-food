@@ -25,7 +25,8 @@ const CartPage = () => {
   const subtotal = useMemo(
     () =>
       items.reduce(
-        (total, item) => total + Number(item.price || 0) * Number(item.quantity || 0),
+        (total, item) =>
+          total + Number(item.price || 0) * Number(item.quantity || 0),
         0,
       ),
     [items],
@@ -33,54 +34,65 @@ const CartPage = () => {
   const total = subtotal > 0 ? subtotal + DELIVERY_FEE : 0;
 
   return (
-    <div className="min-h-screen bg-[#fff8f5]">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
       <DashboardNavbar />
 
-      <main className="mx-auto w-full max-w-5xl px-4 py-6">
+      <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
         <button
           type="button"
           onClick={() => navigate("/")}
-          className="mb-4 inline-flex items-center gap-2 rounded-xl border border-[#f1e5df] bg-white px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-50"
+          className="mb-6 inline-flex items-center gap-2 rounded-2xl border-2 border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 shadow-sm transition hover:border-[#ff5a36] hover:bg-[#fff7f3] hover:text-[#ff5a36] hover:shadow-md"
         >
-          <HiArrowLeft />
+          <HiArrowLeft className="text-lg" />
           Back to food
         </button>
 
-        <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
-          <section className="rounded-2xl border border-[#f1e5df] bg-white shadow-sm">
-            <div className="border-b border-[#f1e5df] px-5 py-4">
-              <h1 className="text-xl font-extrabold text-slate-800">Your cart</h1>
-              <p className="text-xs font-medium text-slate-500">
+        <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
+          <section className="rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white to-slate-50/50 shadow-md">
+            <div className="border-b border-slate-200/60 bg-gradient-to-r from-slate-50 to-white px-6 py-5">
+              <h1 className="text-2xl font-black bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
+                🛒 Your cart
+              </h1>
+              <p className="mt-2 text-sm font-semibold text-slate-500">
                 {items.length} item{items.length !== 1 ? "s" : ""} selected
               </p>
             </div>
 
             {items.length === 0 ? (
-              <div className="grid min-h-[320px] place-items-center px-5 py-10 text-center">
+              <div className="grid min-h-[360px] place-items-center px-6 py-12 text-center">
                 <div>
-                  <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-[#ff5a36]/10 text-[#ff5a36]">
-                    <HiOutlineShoppingBag className="text-3xl" />
+                  <div className="mx-auto grid h-20 w-20 place-items-center rounded-3xl bg-gradient-to-br from-[#ff5a36]/10 to-orange-100/50 text-[#ff5a36]">
+                    <HiOutlineShoppingBag className="text-4xl" />
                   </div>
-                  <p className="mt-4 font-extrabold text-slate-800">Your cart is empty</p>
-                  <p className="mt-1 text-sm font-medium text-slate-500">
+                  <p className="mt-4 font-black text-slate-900 text-lg">
+                    Your cart is empty
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-slate-500">
                     Add something delicious from nearby shops.
                   </p>
                   <button
                     type="button"
                     onClick={() => navigate("/")}
-                    className="mt-5 rounded-xl bg-[#ff5a36] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#e04e2d]"
+                    className="mt-6 rounded-2xl bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-3 text-sm font-bold text-white transition hover:from-[#ff5a36] hover:to-[#ff4420] shadow-md hover:shadow-lg"
                   >
-                    Browse food
+                    📱 Browse food
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="divide-y divide-[#f1e5df]">
+              <div className="divide-y divide-slate-200/60">
                 {items.map((item) => (
-                  <div key={item.itemId} className="flex gap-4 p-4">
-                    <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100">
+                  <div
+                    key={item.itemId}
+                    className="flex gap-4 p-5 hover:bg-slate-50/50 transition"
+                  >
+                    <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 ring-2 ring-[#ff5a36]/10">
                       {item.image ? (
-                        <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="h-full w-full object-cover"
+                        />
                       ) : (
                         <div className="grid h-full place-items-center text-slate-400">
                           <HiOutlineShoppingBag className="text-2xl" />
@@ -91,46 +103,50 @@ const CartPage = () => {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <h2 className="truncate text-sm font-extrabold capitalize text-slate-800">
+                          <h2 className="truncate text-sm font-black capitalize text-slate-900">
                             {item.name}
                           </h2>
-                          <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">
+                          <p className="mt-1 truncate text-xs font-semibold text-slate-500">
                             {item.shopName}
                           </p>
                         </div>
                         <button
                           type="button"
                           onClick={() => dispatch(removeFromCart(item.itemId))}
-                          className="grid h-8 w-8 place-items-center rounded-xl text-slate-400 transition hover:bg-red-50 hover:text-red-500"
+                          className="grid h-8 w-8 place-items-center rounded-full text-slate-400 transition hover:bg-red-50 hover:text-red-500 flex-shrink-0"
                           aria-label={`Remove ${item.name}`}
                         >
-                          <HiTrash />
+                          <HiTrash className="text-lg" />
                         </button>
                       </div>
 
-                      <div className="mt-3 flex items-center justify-between gap-3">
-                        <p className="text-base font-extrabold text-[#ff5a36]">
+                      <div className="mt-4 flex items-center justify-between gap-3">
+                        <p className="text-lg font-black text-[#ff5a36]">
                           PKR {Number(item.price || 0).toLocaleString()}
                         </p>
-                        <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50">
+                        <div className="flex items-center rounded-full border-2 border-slate-200 bg-white hover:border-[#ff5a36] transition">
                           <button
                             type="button"
-                            onClick={() => dispatch(decreaseQuantity(item.itemId))}
-                            className="grid h-9 w-9 place-items-center text-slate-600 transition hover:text-[#ff5a36]"
+                            onClick={() =>
+                              dispatch(decreaseQuantity(item.itemId))
+                            }
+                            className="grid h-8 w-8 place-items-center text-slate-400 transition hover:text-[#ff5a36] hover:bg-[#fff7f3] rounded-l-full"
                             aria-label={`Decrease ${item.name}`}
                           >
-                            <HiMinus />
+                            <HiMinus className="text-sm" />
                           </button>
-                          <span className="w-8 text-center text-sm font-extrabold text-slate-800">
+                          <span className="w-8 text-center text-sm font-black text-slate-800">
                             {item.quantity}
                           </span>
                           <button
                             type="button"
-                            onClick={() => dispatch(increaseQuantity(item.itemId))}
-                            className="grid h-9 w-9 place-items-center text-slate-600 transition hover:text-[#ff5a36]"
+                            onClick={() =>
+                              dispatch(increaseQuantity(item.itemId))
+                            }
+                            className="grid h-8 w-8 place-items-center text-slate-400 transition hover:text-[#ff5a36] hover:bg-[#fff7f3] rounded-r-full"
                             aria-label={`Increase ${item.name}`}
                           >
-                            <HiPlus />
+                            <HiPlus className="text-sm" />
                           </button>
                         </div>
                       </div>
@@ -141,21 +157,35 @@ const CartPage = () => {
             )}
           </section>
 
-          <aside className="h-fit rounded-2xl border border-[#f1e5df] bg-white p-5 shadow-sm">
-            <h2 className="text-base font-extrabold text-slate-800">Order summary</h2>
-            <div className="mt-4 space-y-3 text-sm font-semibold">
-              <div className="flex justify-between text-slate-500">
+          <aside className="h-fit rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white to-slate-50/50 p-6 shadow-md">
+            <h2 className="text-xl font-black bg-gradient-to-r from-slate-900 to-slate-800 bg-clip-text text-transparent">
+              💳 Order summary
+            </h2>
+            <div className="mt-5 space-y-3 text-sm font-semibold">
+              <div className="flex justify-between text-slate-600">
                 <span>Subtotal</span>
-                <span>PKR {subtotal.toLocaleString()}</span>
+                <span className="font-black">
+                  PKR {subtotal.toLocaleString()}
+                </span>
               </div>
-              <div className="flex justify-between text-slate-500">
-                <span>Delivery</span>
-                <span>PKR {subtotal > 0 ? DELIVERY_FEE : 0}</span>
+              <div className="flex justify-between text-slate-600">
+                <span>Subtotal</span>
+                <span className="font-black">
+                  PKR {subtotal.toLocaleString()}
+                </span>
               </div>
-              <div className="border-t border-[#f1e5df] pt-3">
-                <div className="flex justify-between text-base font-extrabold text-slate-800">
-                  <span>Total</span>
-                  <span>PKR {total.toLocaleString()}</span>
+              <div className="flex justify-between text-slate-600">
+                <span>Delivery fee</span>
+                <span className="font-black">
+                  PKR {subtotal > 0 ? DELIVERY_FEE : 0}
+                </span>
+              </div>
+              <div className="border-t border-slate-200 pt-3">
+                <div className="flex justify-between text-lg font-black text-slate-900">
+                  <span>Total amount</span>
+                  <span className="text-[#ff5a36]">
+                    PKR {total.toLocaleString()}
+                  </span>
                 </div>
               </div>
             </div>
@@ -163,9 +193,9 @@ const CartPage = () => {
               type="button"
               disabled={items.length === 0}
               onClick={() => navigate("/checkout")}
-              className="mt-5 w-full rounded-xl bg-[#ff5a36] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#e04e2d] disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-6 w-full rounded-2xl bg-gradient-to-r from-slate-900 to-slate-800 px-4 py-3.5 text-sm font-black text-white shadow-lg transition hover:from-[#ff5a36] hover:to-[#ff4420] hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Proceed to checkout
+              🛍️ Proceed to checkout
             </button>
           </aside>
         </div>
