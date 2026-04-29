@@ -41,7 +41,10 @@ const orderSchema = new mongoose.Schema(
     },
 
     // items inside this order
-    items: [orderItemSchema],
+    items: {
+      type: [orderItemSchema],
+      validate: [(val) => val.length > 0, "Order must have items"],
+    },
 
     // total for this shop only
     totalAmount: {
@@ -50,9 +53,9 @@ const orderSchema = new mongoose.Schema(
       min: 0,
     },
     deliveryAddress: {
-      text: String,
-      latitude: Number,
-      longitude: Number,
+      text: { type: String, required: true },
+      latitude: { type: Number, required: true },
+      longitude: { type: Number, required: true },
     },
     customerName: {
       type: String,
@@ -65,6 +68,7 @@ const orderSchema = new mongoose.Schema(
     paymentMethod: {
       type: String,
       enum: ["cod", "online"],
+      required: true,
     },
     isPaid: {
       type: Boolean,
@@ -92,6 +96,11 @@ const orderSchema = new mongoose.Schema(
     note: {
       type: String,
     },
+    deliveryStatus: {
+      type: String,
+      enum: ["not_assigned", "assigned", "picked", "on_the_way", "delivered"],
+      default: "not_assigned",
+    },
   },
   { timestamps: true },
 );
@@ -99,6 +108,7 @@ const orderSchema = new mongoose.Schema(
 orderSchema.index({ user: 1 });
 orderSchema.index({ shop: 1 });
 orderSchema.index({ status: 1 });
+orderSchema.index({ deliveryBoy: 1 });
 
 const Order = mongoose.model("Order", orderSchema);
 
