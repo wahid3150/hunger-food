@@ -20,7 +20,15 @@ const getInitials = (name) => {
   return (first + last).toUpperCase() || "U";
 };
 
-const DashboardNavbar = ({ searchValue = "", onSearchChange, onOrdersClick }) => {
+const DashboardNavbar = ({
+  searchValue = "",
+  onSearchChange,
+  onOrdersClick,
+  showCart = true,
+  showOrdersButton = true,
+  showSearch = true,
+  showLocation = true,
+}) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const user = useSelector((state) => state.user.userData);
@@ -36,10 +44,7 @@ const DashboardNavbar = ({ searchValue = "", onSearchChange, onOrdersClick }) =>
   const initials = useMemo(() => getInitials(fullName), [fullName]);
   const cartCount = useMemo(
     () =>
-      cartItems.reduce(
-        (count, item) => count + Number(item.quantity || 0),
-        0,
-      ),
+      cartItems.reduce((count, item) => count + Number(item.quantity || 0), 0),
     [cartItems],
   );
   const effectiveSearchValue = onSearchChange ? searchValue : localSearch;
@@ -66,7 +71,10 @@ const DashboardNavbar = ({ searchValue = "", onSearchChange, onOrdersClick }) =>
         { withCredentials: true },
       );
     } catch (error) {
-      console.error("Logout API failed:", error?.response?.data || error?.message);
+      console.error(
+        "Logout API failed:",
+        error?.response?.data || error?.message,
+      );
     } finally {
       dispatch(clearUser());
       navigate("/signin", { replace: true });
@@ -83,59 +91,65 @@ const DashboardNavbar = ({ searchValue = "", onSearchChange, onOrdersClick }) =>
             Hunger Food
           </div>
 
-          {/* Location */}
-          <div className="flex items-center gap-2 border-l border-slate-200 pl-4">
-            <HiOutlineLocationMarker className="text-lg text-[#ff5a36]" />
-            <select
-              value={location}
-              onChange={(e) => setSelectedLocation(e.target.value)}
-              className="cursor-pointer bg-transparent text-sm font-medium text-slate-700 outline-none"
-              aria-label="Location"
-            >
-              {locationOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </div>
+          {showLocation ? (
+            <div className="flex items-center gap-2 border-l border-slate-200 pl-4">
+              <HiOutlineLocationMarker className="text-lg text-[#ff5a36]" />
+              <select
+                value={location}
+                onChange={(e) => setSelectedLocation(e.target.value)}
+                className="cursor-pointer bg-transparent text-sm font-medium text-slate-700 outline-none"
+                aria-label="Location"
+              >
+                {locationOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
         </div>
 
-        {/* Search (center, big with shadow like screenshot) */}
-        <div className="flex flex-1 justify-center">
-          <div className="relative w-full max-w-2xl">
-            <HiOutlineSearch className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg text-slate-400" />
-            <input
-              type="text"
-              value={effectiveSearchValue}
-              onChange={(event) => handleSearchChange(event.target.value)}
-              placeholder="search delicious food..."
-              className="w-full rounded-full border border-slate-200 bg-white py-3 pl-12 pr-4 text-sm text-slate-700 outline-none shadow-[0_10px_25px_rgba(15,23,42,0.10)] transition focus:border-[#ff5a36] focus:ring-2 focus:ring-[#ff5a36]/10"
-            />
+        {showSearch ? (
+          <div className="flex flex-1 justify-center">
+            <div className="relative w-full max-w-2xl">
+              <HiOutlineSearch className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg text-slate-400" />
+              <input
+                type="text"
+                value={effectiveSearchValue}
+                onChange={(event) => handleSearchChange(event.target.value)}
+                placeholder="search delicious food..."
+                className="w-full rounded-full border border-slate-200 bg-white py-3 pl-12 pr-4 text-sm text-slate-700 outline-none shadow-[0_10px_25px_rgba(15,23,42,0.10)] transition focus:border-[#ff5a36] focus:ring-2 focus:ring-[#ff5a36]/10"
+              />
+            </div>
           </div>
-        </div>
+        ) : null}
 
         {/* Right actions */}
         <div className="flex items-center gap-4">
-          <button
-            type="button"
-            onClick={() => navigate("/cart")}
-            className="relative rounded-full p-2 text-slate-700 transition hover:bg-slate-50"
-            aria-label="Cart"
-          >
-            <HiOutlineShoppingCart className="text-2xl" />
-            <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-[#ff5a36] text-[10px] font-bold text-white">
-              {cartCount}
-            </span>
-          </button>
+          {showCart ? (
+            <button
+              type="button"
+              onClick={() => navigate("/cart")}
+              className="relative rounded-full p-2 text-slate-700 transition hover:bg-slate-50"
+              aria-label="Cart"
+            >
+              <HiOutlineShoppingCart className="text-2xl" />
+              <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-[#ff5a36] text-[10px] font-bold text-white">
+                {cartCount}
+              </span>
+            </button>
+          ) : null}
 
-          <button
-            type="button"
-            onClick={onOrdersClick}
-            className="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-          >
-            My Orders
-          </button>
+          {showOrdersButton ? (
+            <button
+              type="button"
+              onClick={onOrdersClick}
+              className="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            >
+              My Orders
+            </button>
+          ) : null}
 
           {/* Profile */}
           <div className="relative">
@@ -200,27 +214,31 @@ const DashboardNavbar = ({ searchValue = "", onSearchChange, onOrdersClick }) =>
           </div>
 
           <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => setMobileSearchOpen((v) => !v)}
-              className="rounded-full p-2 text-slate-700 transition hover:bg-slate-50"
-              aria-label="Search"
-              aria-expanded={mobileSearchOpen}
-            >
-              <HiOutlineSearch className="text-2xl" />
-            </button>
+            {showSearch ? (
+              <button
+                type="button"
+                onClick={() => setMobileSearchOpen((v) => !v)}
+                className="rounded-full p-2 text-slate-700 transition hover:bg-slate-50"
+                aria-label="Search"
+                aria-expanded={mobileSearchOpen}
+              >
+                <HiOutlineSearch className="text-2xl" />
+              </button>
+            ) : null}
 
-            <button
-              type="button"
-              onClick={() => navigate("/cart")}
-              className="relative rounded-full p-2 text-slate-700 transition hover:bg-slate-50"
-              aria-label="Cart"
-            >
-              <HiOutlineShoppingCart className="text-2xl" />
-              <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-[#ff5a36] text-[10px] font-bold text-white">
-                {cartCount}
-              </span>
-            </button>
+            {showCart ? (
+              <button
+                type="button"
+                onClick={() => navigate("/cart")}
+                className="relative rounded-full p-2 text-slate-700 transition hover:bg-slate-50"
+                aria-label="Cart"
+              >
+                <HiOutlineShoppingCart className="text-2xl" />
+                <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-[#ff5a36] text-[10px] font-bold text-white">
+                  {cartCount}
+                </span>
+              </button>
+            ) : null}
 
             <button
               ref={btnRef}
@@ -237,7 +255,7 @@ const DashboardNavbar = ({ searchValue = "", onSearchChange, onOrdersClick }) =>
         </div>
 
         {/* Expandable search panel */}
-        {mobileSearchOpen ? (
+        {showSearch && mobileSearchOpen ? (
           <div className="mt-3">
             <div className="relative">
               <HiOutlineSearch className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg text-slate-400" />
@@ -248,11 +266,13 @@ const DashboardNavbar = ({ searchValue = "", onSearchChange, onOrdersClick }) =>
                 placeholder="search delicious food..."
                 className="w-full rounded-full border border-slate-200 bg-white py-3 pl-12 pr-32 text-sm text-slate-700 outline-none shadow-[0_10px_25px_rgba(15,23,42,0.10)] transition focus:border-[#ff5a36] focus:ring-2 focus:ring-[#ff5a36]/10"
               />
-              <div className="pointer-events-none absolute right-4 top-1/2 flex -translate-y-1/2 items-center gap-1 text-[11px] font-medium text-slate-500">
-                <span>|</span>
-                <HiOutlineLocationMarker className="text-[13px] text-[#ff5a36]" />
-                <span className="max-w-[88px] truncate">{location}</span>
-              </div>
+              {showLocation ? (
+                <div className="pointer-events-none absolute right-4 top-1/2 flex -translate-y-1/2 items-center gap-1 text-[11px] font-medium text-slate-500">
+                  <span>|</span>
+                  <HiOutlineLocationMarker className="text-[13px] text-[#ff5a36]" />
+                  <span className="max-w-[88px] truncate">{location}</span>
+                </div>
+              ) : null}
             </div>
           </div>
         ) : null}
