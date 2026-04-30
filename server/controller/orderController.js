@@ -2,6 +2,7 @@ import Item from "../models/itemModel.js";
 import Order from "../models/orderModel.js";
 import Shop from "../models/shopModel.js";
 import { io } from "../server.js";
+import sendDeliveryOtpMail from "../utils/sendDeliveryOtpMail.js";
 
 export const createOrder = async (req, res) => {
   try {
@@ -371,6 +372,27 @@ export const acceptOrder = async (req, res) => {
       });
     }
 
+    const generateOtp = () => {
+      return Math.floor(100000 + Math.random() * 900000).toString();
+    };
+
+    const otp = generateOtp();
+
+    order.deliveryOtp = otp;
+    order.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    order.isOtpVerified = false;
+    order.otpLastSentAt = new Date();
+    order.otpResendCount = 0;
+
+    await order.save();
+    const user = await User.findById(order.user).select("email");
+
+    if (user?.email) {
+      sendDeliveryOtpMail(user.email, otp).catch((err) => {
+        console.error("Failed to send delivery OTP email:", err.message);
+      });
+    }
+
     // Emit order accepted event to shop owner and customer
     const shop = await Shop.findById(order.shop);
     if (shop) {
@@ -417,6 +439,180 @@ export const getMyDeliveryOrders = async (req, res) => {
     res.status(200).json({
       success: true,
       orders,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const verifyDeliveryOtp = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { otp } = req.body;
+
+    if (!otp) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP is required",
+      });
+    }
+
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    // only assigned delivery boy can verify
+    if (
+      req.user.role !== "deliveryBoy" ||
+      !order.deliveryBoy ||
+      order.deliveryBoy.toString() !== req.user._id.toString()
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to verify OTP",
+      });
+    }
+
+    // expiry check
+    if (!order.otpExpiresAt || order.otpExpiresAt < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP expired",
+      });
+    }
+
+    // wrong OTP
+    if (order.deliveryOtp !== otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP",
+      });
+    }
+
+    // success → complete delivery
+    order.isOtpVerified = true;
+    order.deliveryStatus = "delivered";
+    order.status = "delivered";
+
+    // COD → mark paid on delivery
+    if (order.paymentMethod === "cod") {
+      order.isPaid = true;
+    }
+
+    //clear OTP after use
+    order.deliveryOtp = undefined;
+    order.otpExpiresAt = undefined;
+
+    await order.save();
+
+    // notify user + owner
+    io.to(order.user.toString()).emit("order-delivered", {
+      orderId: order._id,
+    });
+    const shop = await Shop.findById(order.shop).select("owner");
+    if (shop) {
+      io.to(shop.owner.toString()).emit("order-delivered", {
+        orderId: order._id,
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Order delivered successfully",
+      order,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const resendDeliveryOtp = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    // ONLY USER can request resend
+    if (order.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to resend OTP",
+      });
+    }
+
+    //Already delivered
+    if (order.isOtpVerified || order.status === "delivered") {
+      return res.status(400).json({
+        success: false,
+        message: "Order already completed",
+      });
+    }
+
+    const now = new Date();
+
+    // Cooldown (60 sec)
+    if (order.otpLastSentAt && now - order.otpLastSentAt < 60 * 1000) {
+      const secondsLeft = Math.ceil(
+        (60 * 1000 - (now - order.otpLastSentAt)) / 1000,
+      );
+
+      return res.status(429).json({
+        success: false,
+        message: `Please wait ${secondsLeft}s before requesting again`,
+      });
+    }
+
+    //Max attempts (3)
+    if (order.otpResendCount >= 3) {
+      return res.status(429).json({
+        success: false,
+        message: "Maximum OTP resend attempts reached",
+      });
+    }
+
+    // Generate new OTP
+    const generateOtp = () =>
+      Math.floor(100000 + Math.random() * 900000).toString();
+
+    const otp = generateOtp();
+
+    order.deliveryOtp = otp;
+    order.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    order.otpLastSentAt = now;
+    order.otpResendCount += 1;
+
+    await order.save();
+
+    // Send email
+    const user = await User.findById(order.user).select("email");
+
+    if (user?.email) {
+      sendDeliveryOtpMail(user.email, otp).catch((err) => {
+        console.error("Resend OTP email failed:", err.message);
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "OTP resent successfully",
     });
   } catch (error) {
     res.status(500).json({

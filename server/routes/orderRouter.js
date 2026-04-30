@@ -7,7 +7,9 @@ import {
   getMyDeliveryOrders,
   getMyOrders,
   getShopOrders,
+  resendDeliveryOtp,
   updateOrderStatus,
+  verifyDeliveryOtp,
 } from "../controller/orderController.js";
 
 const router = express.Router();
@@ -19,5 +21,7 @@ router.patch("/:orderId/status", isAuth, updateOrderStatus);
 router.get("/delivery/available-orders", isAuth, getAvailableOrders);
 router.patch("/:orderId/accept", isAuth, acceptOrder);
 router.get("/delivery/my-orders", isAuth, getMyDeliveryOrders);
+router.patch("/:orderId/verify-otp", isAuth, verifyDeliveryOtp);
+router.post("/:orderId/resend-otp", isAuth, resendDeliveryOtp);
 
 export default router;

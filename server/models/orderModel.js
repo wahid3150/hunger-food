@@ -101,6 +101,23 @@ const orderSchema = new mongoose.Schema(
       enum: ["not_assigned", "assigned", "picked", "on_the_way", "delivered"],
       default: "not_assigned",
     },
+    deliveryOtp: {
+      type: String,
+    },
+    otpExpiresAt: {
+      type: Date,
+    },
+    isOtpVerified: {
+      type: Boolean,
+      default: false,
+    },
+    otpResendCount: {
+      type: Number,
+      default: 0,
+    },
+    otpLastSentAt: {
+      type: Date,
+    },
   },
   { timestamps: true },
 );
