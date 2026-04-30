@@ -2,7 +2,7 @@ import Item from "../models/itemModel.js";
 import Order from "../models/orderModel.js";
 import Shop from "../models/shopModel.js";
 import { io } from "../server.js";
-import sendDeliveryOtpMail from "../utils/sendDeliveryOtpMail.js";
+import { sendDeliveryOtpMail } from "../utils/sendDeliveryOtpMail.js";
 
 export const createOrder = async (req, res) => {
   try {
