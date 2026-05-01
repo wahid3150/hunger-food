@@ -1,6 +1,7 @@
 import Item from "../models/itemModel.js";
 import Order from "../models/orderModel.js";
 import Shop from "../models/shopModel.js";
+import User from "../models/userModels.js";
 import { io } from "../server.js";
 import { sendDeliveryOtpMail } from "../utils/sendDeliveryOtpMail.js";
 
