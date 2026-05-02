@@ -10,10 +10,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.10",
+    "@react-google-maps/api": "^2.20.8",
     "@reduxjs/toolkit": "^2.11.2",
     "@tailwindcss/vite": "^4.2.2",
     "axios": "^1.14.0",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "firebase": "^12.11.0",
+    "framer-motion": "^12.38.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-hot-toast": "^2.6.0",
@@ -21,7 +26,11 @@
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.14.0",
     "react-spinners": "^0.17.0",
-    "tailwindcss": "^4.2.2"
+    "react-use": "^17.6.0",
+    "recharts": "^3.8.1",
+    "socket.io-client": "^4.8.3",
+    "tailwindcss": "^4.2.2",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
