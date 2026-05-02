@@ -9,6 +9,7 @@ import {
   HiOutlineShoppingCart,
 } from "react-icons/hi";
 import useGetCity from "../hooks/useGetCity";
+import NotificationBell from "./NotificationBell";
 import { serverUrl } from "../App";
 
 const getInitials = (name) => {
@@ -135,6 +136,7 @@ const DashboardNavbar = ({
 
         {/* Right actions */}
         <div className="flex items-center gap-2">
+          <NotificationBell />
           {showCart ? (
             <button
               type="button"
@@ -231,6 +233,7 @@ const DashboardNavbar = ({
           </button>
 
           <div className="flex items-center gap-1">
+            <NotificationBell />
             {showSearch ? (
               <button
                 type="button"
