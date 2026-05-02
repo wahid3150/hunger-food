@@ -2,13 +2,6 @@ import { useEffect } from "react";
 import { useSelector } from "react-redux";
 import socket from "../lib/socket";
 
-/**
- * useSocket — manages connection lifecycle.
- *
- * Call once near the top of your app (e.g. in Home or App).
- * Every component that needs the socket can also import it directly
- * from `../lib/socket` without re-running this hook.
- */
 const useSocket = () => {
   const user = useSelector((state) => state.user.userData);
 
