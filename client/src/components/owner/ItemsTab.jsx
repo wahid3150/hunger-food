@@ -9,6 +9,8 @@ import {
   HiSearch,
   HiChevronDown,
   HiArrowLeft,
+  HiOutlineViewGrid,
+  HiOutlinePhotograph,
 } from "react-icons/hi";
 import { serverUrl } from "../../App";
 import ItemFormModal from "./ItemFormModal";
@@ -259,7 +261,9 @@ const ItemsTab = ({ shops, preSelectedShop, onBack }) => {
       {/* Empty state */}
       {!loading && items.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="text-6xl mb-4">🍽️</div>
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-slate-100 mb-4">
+            <HiOutlineViewGrid className="text-4xl text-slate-400" />
+          </div>
           <p className="text-base font-semibold text-slate-700">No items found</p>
           <p className="text-sm text-slate-500 mt-1">
             {search || filterFoodType || filterAvailability
@@ -294,7 +298,9 @@ const ItemsTab = ({ shops, preSelectedShop, onBack }) => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-full text-2xl">🍔</div>
+                  <div className="flex items-center justify-center h-full">
+                    <HiOutlinePhotograph className="text-slate-400 text-2xl" />
+                  </div>
                 )}
               </div>
 

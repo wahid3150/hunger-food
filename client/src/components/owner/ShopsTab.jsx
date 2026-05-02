@@ -8,6 +8,7 @@ import {
   HiRefresh,
   HiLocationMarker,
   HiSearch,
+  HiOutlineShoppingBag,
 } from "react-icons/hi";
 import { serverUrl } from "../../App";
 import ShopFormModal from "./ShopFormModal";
@@ -112,7 +113,9 @@ const ShopsTab = ({ onSelectShop, onShopSaved }) => {
       {/* Empty state */}
       {!loading && filtered.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="text-6xl mb-4">🏪</div>
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-slate-100 mb-4">
+            <HiOutlineShoppingBag className="text-4xl text-slate-400" />
+          </div>
           <p className="text-base font-semibold text-slate-700">
             {search ? "No shops found" : "No shops yet"}
           </p>
@@ -149,7 +152,9 @@ const ShopsTab = ({ onSelectShop, onShopSaved }) => {
                     className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-full text-5xl">🏪</div>
+                  <div className="flex items-center justify-center h-full">
+                    <HiOutlineShoppingBag className="text-slate-400 text-4xl" />
+                  </div>
                 )}
                 {/* Overlay actions */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition duration-300" />
