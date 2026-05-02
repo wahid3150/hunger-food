@@ -103,7 +103,7 @@ const ItemsTab = ({ shops, preSelectedShop, onBack }) => {
       const res = await axios.patch(
         `${serverUrl}/api/item/items/${item._id}/toggle-availability`,
         {},
-        { withCredentials: true }
+        { withCredentials: true },
       );
       toast.success(res.data?.message || "Availability updated");
       fetchItems();
@@ -129,10 +129,13 @@ const ItemsTab = ({ shops, preSelectedShop, onBack }) => {
           )}
           <div>
             <h2 className="text-xl font-bold text-slate-800">
-              {preSelectedShop ? `Items — ${preSelectedShop.name}` : "All Items"}
+              {preSelectedShop
+                ? `Items — ${preSelectedShop.name}`
+                : "All Items"}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Showing {items.length} of {totalItems} item{totalItems !== 1 ? "s" : ""}
+              Showing {items.length} of {totalItems} item
+              {totalItems !== 1 ? "s" : ""}
             </p>
           </div>
         </div>
@@ -232,7 +235,11 @@ const ItemsTab = ({ shops, preSelectedShop, onBack }) => {
         </div>
 
         {/* Clear filters */}
-        {(search || filterShop || filterFoodType || filterAvailability || sort !== "latest") && (
+        {(search ||
+          filterShop ||
+          filterFoodType ||
+          filterAvailability ||
+          sort !== "latest") && (
           <button
             onClick={() => {
               setSearch("");
@@ -253,7 +260,10 @@ const ItemsTab = ({ shops, preSelectedShop, onBack }) => {
       {loading && (
         <div className="space-y-3">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="rounded-2xl bg-slate-100 animate-pulse h-20" />
+            <div
+              key={i}
+              className="rounded-2xl bg-slate-100 animate-pulse h-20"
+            />
           ))}
         </div>
       )}
@@ -264,7 +274,9 @@ const ItemsTab = ({ shops, preSelectedShop, onBack }) => {
           <div className="flex h-20 w-20 items-center justify-center rounded-full bg-slate-100 mb-4">
             <HiOutlineViewGrid className="text-4xl text-slate-400" />
           </div>
-          <p className="text-base font-semibold text-slate-700">No items found</p>
+          <p className="text-base font-semibold text-slate-700">
+            No items found
+          </p>
           <p className="text-sm text-slate-500 mt-1">
             {search || filterFoodType || filterAvailability
               ? "Try adjusting your filters"
@@ -312,7 +324,8 @@ const ItemsTab = ({ shops, preSelectedShop, onBack }) => {
                   </h3>
                   <span
                     className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
-                      FOOD_TYPE_COLORS[item.foodType] || "bg-slate-50 text-slate-500 border-slate-200"
+                      FOOD_TYPE_COLORS[item.foodType] ||
+                      "bg-slate-50 text-slate-500 border-slate-200"
                     }`}
                   >
                     {item.foodType === "veg" ? "🥦 Veg" : "🍗 Non-Veg"}
@@ -342,7 +355,9 @@ const ItemsTab = ({ shops, preSelectedShop, onBack }) => {
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                     item.isAvailable ? "bg-[#ff5a36]" : "bg-slate-200"
                   } ${togglingId === item._id ? "opacity-50" : ""}`}
-                  title={item.isAvailable ? "Mark unavailable" : "Mark available"}
+                  title={
+                    item.isAvailable ? "Mark unavailable" : "Mark available"
+                  }
                 >
                   <span
                     className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
@@ -393,7 +408,9 @@ const ItemsTab = ({ shops, preSelectedShop, onBack }) => {
             </button>
             <button
               type="button"
-              onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+              onClick={() =>
+                setPage((current) => Math.min(totalPages, current + 1))
+              }
               disabled={page >= totalPages}
               className="rounded-xl bg-[#ff5a36] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#e04e2d] disabled:cursor-not-allowed disabled:opacity-50"
             >
