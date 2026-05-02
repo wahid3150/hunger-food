@@ -353,6 +353,19 @@ export const acceptOrder = async (req, res) => {
       });
     }
 
+    // One active order per delivery boy at a time
+    const activeOrder = await Order.findOne({
+      deliveryBoy: riderId,
+      deliveryStatus: { $in: ["assigned", "picked", "on_the_way"] },
+    });
+    if (activeOrder) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "You already have an active order. Complete it before accepting a new one.",
+      });
+    }
+
     const order = await Order.findOneAndUpdate(
       {
         _id: orderId,
@@ -361,7 +374,7 @@ export const acceptOrder = async (req, res) => {
       {
         deliveryBoy: riderId,
         deliveryStatus: "assigned",
-        status: "preparing",
+        status: "out_for_delivery",
       },
       { new: true },
     );
@@ -373,26 +386,8 @@ export const acceptOrder = async (req, res) => {
       });
     }
 
-    const generateOtp = () => {
-      return Math.floor(100000 + Math.random() * 900000).toString();
-    };
-
-    const otp = generateOtp();
-
-    order.deliveryOtp = otp;
-    order.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-    order.isOtpVerified = false;
-    order.otpLastSentAt = new Date();
-    order.otpResendCount = 0;
-
+    // Save assignment (no OTP yet — OTP is sent when delivery boy arrives)
     await order.save();
-    const user = await User.findById(order.user).select("email");
-
-    if (user?.email) {
-      sendDeliveryOtpMail(user.email, otp).catch((err) => {
-        console.error("Failed to send delivery OTP email:", err.message);
-      });
-    }
 
     // Emit order accepted event to shop owner and customer
     const shop = await Shop.findById(order.shop);
@@ -402,11 +397,20 @@ export const acceptOrder = async (req, res) => {
         deliveryBoyId: riderId,
         message: "A delivery boy has been assigned to this order",
       });
+      // Also emit status update so owner status badge changes immediately
+      io.to(shop.owner.toString()).emit("order_status_updated", {
+        orderId: order._id,
+        status: "out_for_delivery",
+      });
     }
 
     io.to(order.user.toString()).emit("delivery_boy_assigned", {
       orderId: order._id,
       message: "Your order has been assigned to a delivery boy",
+    });
+    io.to(order.user.toString()).emit("order_status_updated", {
+      orderId: order._id,
+      status: "out_for_delivery",
     });
 
     res.status(200).json({
@@ -419,6 +423,62 @@ export const acceptOrder = async (req, res) => {
       success: false,
       message: error.message,
     });
+  }
+};
+
+export const sendDeliveryOtp = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    // Only the assigned delivery boy can trigger this
+    if (
+      req.user.role !== "deliveryBoy" ||
+      !order.deliveryBoy ||
+      order.deliveryBoy.toString() !== req.user._id.toString()
+    ) {
+      return res.status(403).json({ success: false, message: "Not authorized" });
+    }
+
+    if (order.isOtpVerified || order.status === "delivered") {
+      return res.status(400).json({ success: false, message: "Order already completed" });
+    }
+
+    const now = new Date();
+
+    // Cooldown: prevent hammering (60 s between sends)
+    if (order.otpLastSentAt && now - order.otpLastSentAt < 60 * 1000) {
+      const secondsLeft = Math.ceil((60 * 1000 - (now - order.otpLastSentAt)) / 1000);
+      return res.status(429).json({
+        success: false,
+        message: `Please wait ${secondsLeft}s before requesting again`,
+      });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    order.deliveryOtp = otp;
+    order.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+    order.isOtpVerified = false;
+    order.otpLastSentAt = now;
+    order.otpResendCount = (order.otpResendCount || 0) + 1;
+
+    await order.save();
+
+    const user = await User.findById(order.user).select("email");
+    if (user?.email) {
+      sendDeliveryOtpMail(user.email, otp).catch((err) => {
+        console.error("Failed to send delivery OTP email:", err.message);
+      });
+    }
+
+    res.status(200).json({ success: true, message: "OTP sent to customer's email" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -514,8 +574,16 @@ export const verifyDeliveryOtp = async (req, res) => {
 
     await order.save();
 
-    // notify user + owner
+    // notify user, owner, and delivery boy
     io.to(order.user.toString()).emit("order-delivered", {
+      orderId: order._id,
+    });
+    // Also emit to the order room so any listener (user tracking map) clears
+    io.to(order._id.toString()).emit("order-delivered", {
+      orderId: order._id,
+    });
+    // Notify delivery boy's own room so their map closes
+    io.to(order.deliveryBoy.toString()).emit("order-delivered", {
       orderId: order._id,
     });
     const shop = await Shop.findById(order.shop).select("owner");

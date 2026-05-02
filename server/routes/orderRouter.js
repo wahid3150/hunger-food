@@ -8,6 +8,7 @@ import {
   getMyOrders,
   getShopOrders,
   resendDeliveryOtp,
+  sendDeliveryOtp,
   updateOrderStatus,
   verifyDeliveryOtp,
 } from "../controller/orderController.js";
@@ -23,5 +24,6 @@ router.patch("/:orderId/accept", isAuth, acceptOrder);
 router.get("/delivery/my-orders", isAuth, getMyDeliveryOrders);
 router.patch("/:orderId/verify-otp", isAuth, verifyDeliveryOtp);
 router.post("/:orderId/resend-otp", isAuth, resendDeliveryOtp);
+router.post("/:orderId/send-otp", isAuth, sendDeliveryOtp);
 
 export default router;
