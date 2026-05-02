@@ -16,7 +16,7 @@ import { serverUrl } from "../../App";
 import ItemFormModal from "./ItemFormModal";
 import DeleteConfirmModal from "./DeleteConfirmModal";
 
-const PAGE_LIMIT = 50;
+const PAGE_LIMIT = 20;
 
 const FOOD_TYPE_COLORS = {
   veg: "bg-emerald-50 text-emerald-600 border-emerald-200",
