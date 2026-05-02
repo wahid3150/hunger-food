@@ -4,6 +4,7 @@ import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
 import ForgotPassword from "./pages/ForgotPassword";
 import useGetCurrentUser from "./hooks/useGetCurrentUser";
+import useSocket from "./hooks/useSocket";
 import { useSelector } from "react-redux";
 import Home from "./pages/Home";
 import AuthGate from "./components/AuthGate";
@@ -13,6 +14,7 @@ export const serverUrl = "http://localhost:8000";
 
 const App = () => {
   useGetCurrentUser();
+  useSocket();
   const user = useSelector((state) => state.user.userData);
 
   return (

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   HiOutlineHome,
   HiOutlineShoppingBag,
@@ -18,7 +19,6 @@ import ShopsTab from "./owner/ShopsTab";
 import ItemsTab from "./owner/ItemsTab";
 import OrdersTab from "./owner/OrdersTab";
 
-/* ── helpers ────────────────────────────────────── */
 const getInitials = (name) => {
   const safe = String(name || "").trim();
   if (!safe) return "U";
@@ -34,7 +34,6 @@ const NAV_ITEMS = [
   { id: "orders", label: "Orders", icon: <HiOutlineClipboardList className="text-lg" /> },
 ];
 
-/* ── component ──────────────────────────────────── */
 const OwnerDashboard = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -131,19 +130,17 @@ const OwnerDashboard = () => {
             <button
               key={item.id}
               onClick={() => goToTab(item.id)}
-              className={`flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
-                isActive
+              className={`flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${isActive
                   ? "bg-[#ff5a36] text-white shadow-sm shadow-[#ff5a36]/30"
                   : "text-slate-600 hover:bg-slate-100"
-              }`}
+                }`}
             >
               <span className={isActive ? "text-white" : "text-slate-400"}>{item.icon}</span>
               {item.label}
               {item.id === "shops" && !shopsLoading && (
                 <span
-                  className={`ml-auto text-[10px] font-bold rounded-full px-2 py-0.5 ${
-                    isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
-                  }`}
+                  className={`ml-auto text-[10px] font-bold rounded-full px-2 py-0.5 ${isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
+                    }`}
                 >
                   {shops.length}
                 </span>
@@ -266,27 +263,38 @@ const OwnerDashboard = () => {
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto px-4 py-6 md:px-6 lg:px-8">
-          {activeTab === "overview" && (
-            <OverviewTab
-              shops={shops}
-              onGoToShops={() => goToTab("shops")}
-              onGoToItems={() => goToTab("items")}
-            />
-          )}
-          {activeTab === "shops" && (
-            <ShopsTab
-              onSelectShop={handleSelectShop}
-              onShopSaved={handleShopsSaved}
-            />
-          )}
-          {activeTab === "items" && (
-            <ItemsTab
-              shops={shops}
-              preSelectedShop={selectedShop}
-              onBack={selectedShop ? () => { setSelectedShop(null); goToTab("shops"); } : null}
-            />
-          )}
-          {activeTab === "orders" && <OrdersTab shops={shops} />}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.18, ease: "easeInOut" }}
+            >
+              {activeTab === "overview" && (
+                <OverviewTab
+                  shops={shops}
+                  onGoToShops={() => goToTab("shops")}
+                  onGoToItems={() => goToTab("items")}
+                  onGoToOrders={() => goToTab("orders")}
+                />
+              )}
+              {activeTab === "shops" && (
+                <ShopsTab
+                  onSelectShop={handleSelectShop}
+                  onShopSaved={handleShopsSaved}
+                />
+              )}
+              {activeTab === "items" && (
+                <ItemsTab
+                  shops={shops}
+                  preSelectedShop={selectedShop}
+                  onBack={selectedShop ? () => { setSelectedShop(null); goToTab("shops"); } : null}
+                />
+              )}
+              {activeTab === "orders" && <OrdersTab shops={shops} />}
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
     </div>

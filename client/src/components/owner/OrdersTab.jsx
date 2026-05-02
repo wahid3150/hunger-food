@@ -3,11 +3,13 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import {
   HiOutlineClipboardList,
-  HiOutlineRefresh,
   HiOutlineTruck,
   HiChevronDown,
+  HiSearch,
+  HiX,
 } from "react-icons/hi";
 import { serverUrl } from "../../App";
+import socket from "../../lib/socket";
 
 const STATUS_LABELS = {
   pending: "Pending",
@@ -27,8 +29,8 @@ const NEXT_ACTIONS = {
     { status: "preparing", label: "Start preparing" },
     { status: "cancelled", label: "Cancel" },
   ],
-  preparing: [{ status: "out_for_delivery", label: "Send to delivery" }],
-  out_for_delivery: [{ status: "delivered", label: "Mark delivered" }],
+  preparing: [],
+  out_for_delivery: [],
   delivered: [],
   cancelled: [],
 };
@@ -46,6 +48,8 @@ const OrdersTab = ({ shops }) => {
   const [loading, setLoading] = useState(true);
   const [selectedShopId, setSelectedShopId] = useState("");
   const [updatingId, setUpdatingId] = useState("");
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
 
   const shopMap = useMemo(
     () =>
@@ -101,6 +105,54 @@ const OrdersTab = ({ shops }) => {
     setLoading(false);
   }, [fetchOrders, shops.length]);
 
+  // ── Socket: real-time order updates ──────────────────────────────────────
+  useEffect(() => {
+    const handleNewOrder = () => fetchOrders(); // refetch to get full order data
+
+    const handleStatusUpdated = ({ orderId, status }) => {
+      setOrders((prev) =>
+        prev.map((o) => (o._id === orderId ? { ...o, status } : o)),
+      );
+    };
+
+    const handleDeliveryAssigned = ({ orderId }) => {
+      setOrders((prev) =>
+        prev.map((o) =>
+          o._id === orderId
+            ? {
+                ...o,
+                deliveryStatus: "assigned",
+                deliveryBoy: true,
+                status: "out_for_delivery",
+              }
+            : o,
+        ),
+      );
+    };
+
+    const handleDelivered = ({ orderId }) => {
+      setOrders((prev) =>
+        prev.map((o) =>
+          o._id === orderId
+            ? { ...o, status: "delivered", deliveryStatus: "delivered" }
+            : o,
+        ),
+      );
+    };
+
+    socket.on("new_order", handleNewOrder);
+    socket.on("order_status_updated", handleStatusUpdated);
+    socket.on("delivery_boy_assigned", handleDeliveryAssigned);
+    socket.on("order-delivered", handleDelivered);
+
+    return () => {
+      socket.off("new_order", handleNewOrder);
+      socket.off("order_status_updated", handleStatusUpdated);
+      socket.off("delivery_boy_assigned", handleDeliveryAssigned);
+      socket.off("order-delivered", handleDelivered);
+    };
+  }, [fetchOrders]);
+
   const updateStatus = async (order, status) => {
     setUpdatingId(order._id);
     try {
@@ -109,14 +161,34 @@ const OrdersTab = ({ shops }) => {
         { status },
         { withCredentials: true },
       );
+      // Optimistically update in-place (socket will also confirm)
+      setOrders((prev) =>
+        prev.map((o) => (o._id === order._id ? { ...o, status } : o)),
+      );
       toast.success("Order status updated");
-      fetchOrders();
     } catch (error) {
       toast.error(error?.response?.data?.message || "Failed to update status");
     } finally {
       setUpdatingId("");
     }
   };
+  // Client-side search + status filter
+  const filteredOrders = useMemo(() => {
+    let result = orders;
+    if (filterStatus) result = result.filter((o) => o.status === filterStatus);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(
+        (o) =>
+          (o.customerName || o.user?.fullName || "").toLowerCase().includes(q) ||
+          (o.customerPhone || o.user?.mobile || "").includes(q) ||
+          o._id.toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [orders, search, filterStatus]);
+
+  const hasActiveFilters = search || filterStatus;
 
   return (
     <div className="space-y-5">
@@ -124,11 +196,45 @@ const OrdersTab = ({ shops }) => {
         <div>
           <h2 className="text-xl font-bold text-slate-800">Orders</h2>
           <p className="mt-1 text-xs font-medium text-slate-500">
-            Confirm orders, move them into preparation, and send them for
-            delivery.
+            {filteredOrders.length} of {orders.length} order{orders.length !== 1 ? "s" : ""} shown
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          {/* Search */}
+          <div className="relative">
+            <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
+            <input
+              type="text"
+              placeholder="Customer, phone, order ID..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-8 pr-8 py-2 h-10 rounded-xl border border-slate-200 text-sm text-slate-700 outline-none focus:border-[#ff5a36] focus:ring-2 focus:ring-[#ff5a36]/10 transition w-52"
+            />
+            {search && (
+              <button onClick={() => setSearch("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                <HiX className="text-sm" />
+              </button>
+            )}
+          </div>
+          {/* Status filter */}
+          <label className="relative">
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="h-10 appearance-none rounded-xl border border-slate-200 bg-white pl-3 pr-9 text-sm font-semibold text-slate-600 outline-none transition focus:border-[#ff5a36]"
+            >
+              <option value="">All statuses</option>
+              <option value="pending">Pending</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="preparing">Preparing</option>
+              <option value="out_for_delivery">Out for Delivery</option>
+              <option value="delivered">Delivered</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <HiChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          </label>
+          {/* Shop filter */}
           <label className="relative">
             <select
               value={selectedShopId}
@@ -137,21 +243,25 @@ const OrdersTab = ({ shops }) => {
             >
               <option value="">All shops</option>
               {shops.map((shop) => (
-                <option key={shop._id} value={shop._id}>
-                  {shop.name}
-                </option>
+                <option key={shop._id} value={shop._id}>{shop.name}</option>
               ))}
             </select>
             <HiChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
           </label>
-          <button
-            type="button"
-            onClick={fetchOrders}
-            className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
-          >
-            <HiOutlineRefresh className={loading ? "animate-spin" : ""} />
-            Refresh
-          </button>
+          {/* Clear filters */}
+          {hasActiveFilters && (
+            <button
+              onClick={() => { setSearch(""); setFilterStatus(""); }}
+              className="h-10 px-3 rounded-xl border border-slate-200 text-xs font-semibold text-slate-500 hover:bg-slate-50 transition"
+            >
+              Clear
+            </button>
+          )}
+          {/* Live indicator */}
+          <div className="inline-flex h-10 items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-600">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            Live
+          </div>
         </div>
       </div>
 
@@ -172,9 +282,23 @@ const OrdersTab = ({ shops }) => {
             New customer orders will appear here.
           </p>
         </div>
+      ) : filteredOrders.length === 0 ? (
+        <div className="rounded-2xl border border-slate-100 bg-white px-5 py-14 text-center shadow-sm">
+          <HiSearch className="mx-auto text-5xl text-slate-300" />
+          <p className="mt-3 font-bold text-slate-800">No matching orders</p>
+          <p className="mt-1 text-sm text-slate-500">
+            Try adjusting your search or filter.
+          </p>
+          <button
+            onClick={() => { setSearch(""); setFilterStatus(""); }}
+            className="mt-3 text-sm font-semibold text-[#ff5a36] hover:underline"
+          >
+            Clear filters
+          </button>
+        </div>
       ) : (
         <div className="space-y-4">
-          {orders.map((order) => {
+          {filteredOrders.map((order) => {
             const shop = shopMap[order.shopId] || order.shop || {};
             const actions = NEXT_ACTIONS[order.status] || [];
 
@@ -239,47 +363,45 @@ const OrdersTab = ({ shops }) => {
                     ))}
                   </div>
 
-                  <div className="space-y-2">
-                    {actions.length > 0 ? (
-                      actions.map((action) => (
-                        <button
-                          key={action.status}
-                          type="button"
-                          disabled={updatingId === order._id}
-                          onClick={() => updateStatus(order, action.status)}
-                          className={`w-full rounded-xl px-4 py-2.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                            action.status === "cancelled"
-                              ? "bg-red-50 text-red-600 hover:bg-red-100"
-                              : "bg-[#ff5a36] text-white hover:bg-[#e04e2d]"
-                          }`}
-                        >
-                          {updatingId === order._id
-                            ? "Updating..."
-                            : action.label}
-                        </button>
-                      ))
-                    ) : (
-                      <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
-                        No owner actions available for this order.
-                      </div>
-                    )}
+                    <div className="space-y-2">
+                      {actions.length > 0 ? (
+                        actions.map((action) => (
+                          <button
+                            key={action.status}
+                            type="button"
+                            disabled={updatingId === order._id}
+                            onClick={() => updateStatus(order, action.status)}
+                            className={`w-full rounded-xl px-4 py-2.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                              action.status === "cancelled"
+                                ? "bg-red-50 text-red-600 hover:bg-red-100"
+                                : "bg-[#ff5a36] text-white hover:bg-[#e04e2d]"
+                            }`}
+                          >
+                            {updatingId === order._id ? "Updating..." : action.label}
+                          </button>
+                        ))
+                      ) : (
+                        <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
+                          {order.status === "out_for_delivery"
+                            ? "Rider is on the way"
+                            : order.status === "preparing" && !order.deliveryBoy
+                            ? "Waiting for a delivery rider"
+                            : "No actions available"}
+                        </div>
+                      )}
 
-                    <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                      <p className="font-semibold text-slate-800">
-                        Delivery status
-                      </p>
-                      <p className="mt-1">
-                        {String(
-                          order.deliveryStatus || "not_assigned",
-                        ).replaceAll("_", " ")}
-                      </p>
-                      <p className="mt-1 text-xs text-slate-500">
-                        {order.deliveryBoy
-                          ? "Delivery boy assigned"
-                          : "Waiting for delivery boy"}
-                      </p>
+                      <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                        <p className="font-semibold text-slate-800">Delivery status</p>
+                        <p className="mt-1">
+                          {String(order.deliveryStatus || "not_assigned").replaceAll("_", " ")}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {order.deliveryBoy
+                            ? <span className="inline-flex items-center gap-1 text-emerald-600 font-semibold">✓ Rider assigned &amp; en route</span>
+                            : "Waiting for delivery rider"}
+                        </p>
+                      </div>
                     </div>
-                  </div>
                 </div>
               </article>
             );

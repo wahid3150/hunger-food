@@ -28,6 +28,8 @@ import {
 import { addToCart } from "../../redux/cartSlice";
 import { serverUrl } from "../App";
 import DashboardNavbar from "./DashboardNavbar";
+import socket from "../lib/socket";
+import LiveTracking from "./user/LiveTracking";
 
 const PAGE_LIMIT = 12;
 const TOP_SHOP_ITEM_LIMIT = 50;
@@ -113,6 +115,7 @@ const UserDashboard = () => {
   const [similarItems, setSimilarItems] = useState([]);
   const [quantities, setQuantities] = useState({});
   const lastItemQueryRef = useRef("");
+  const [trackingOrderId, setTrackingOrderId] = useState(null);
 
   const activeShopId = selectedShop?._id || "";
   const isHomeView = !selectedShop && !selectedItem;
@@ -367,11 +370,68 @@ const UserDashboard = () => {
     setPage(1);
   }, [itemQueryKey]);
 
-  const refreshDashboard = () => {
-    fetchShops();
-    fetchItems();
-    fetchAllAvailableItems();
-  };
+  // ── Socket: real-time order status updates ──────────────────────────────
+  useEffect(() => {
+    const handleDeliveryAssigned = ({ orderId }) => {
+      setOrders((prev) =>
+        prev.map((o) =>
+          o._id === orderId
+            ? { ...o, deliveryStatus: "assigned", status: "out_for_delivery" }
+            : o,
+        ),
+      );
+      // Auto-open the live map
+      setTrackingOrderId(orderId);
+      socket.emit("join-order", orderId);
+      toast.success("🛵 Rider assigned! Live tracking is now active.");
+    };
+
+    const handleOrderDelivered = ({ orderId }) => {
+      setOrders((prev) =>
+        prev.map((o) =>
+          o._id === orderId
+            ? { ...o, status: "delivered", deliveryStatus: "delivered" }
+            : o,
+        ),
+      );
+      setTrackingOrderId((prev) => (prev === orderId ? null : prev));
+      toast.success("✅ Order delivered! Thank you for ordering.");
+    };
+
+    const handleStatusUpdated = ({ orderId, status }) => {
+      setOrders((prev) =>
+        prev.map((o) => (o._id === orderId ? { ...o, status } : o)),
+      );
+    };
+
+    socket.on("delivery_boy_assigned", handleDeliveryAssigned);
+    socket.on("order-delivered", handleOrderDelivered);
+    socket.on("order_status_updated", handleStatusUpdated);
+
+    return () => {
+      socket.off("delivery_boy_assigned", handleDeliveryAssigned);
+      socket.off("order-delivered", handleOrderDelivered);
+      socket.off("order_status_updated", handleStatusUpdated);
+    };
+  }, []);
+
+  // Join / leave order room for live tracking
+  useEffect(() => {
+    if (!trackingOrderId) return;
+    socket.emit("join-order", trackingOrderId);
+    return () => {
+      socket.emit("leave-order", trackingOrderId);
+    };
+  }, [trackingOrderId]);
+
+  // Auto-refresh shops + items every 2 minutes (no socket push for these)
+  useEffect(() => {
+    const id = setInterval(() => {
+      fetchShops();
+      fetchAllAvailableItems();
+    }, 2 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [fetchShops, fetchAllAvailableItems]);
 
   const clearFilters = () => {
     setSearch("");
@@ -658,16 +718,11 @@ const UserDashboard = () => {
                 </p>
               </div>
               <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={fetchMyOrders}
-                  className="inline-flex h-11 items-center gap-2 rounded-2xl border-2 border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 shadow-sm transition hover:border-[#ff5a36] hover:bg-[#fff7f3] hover:text-[#ff5a36] hover:shadow-md"
-                >
-                  <HiOutlineRefresh
-                    className={ordersLoading ? "animate-spin" : ""}
-                  />
-                  Refresh
-                </button>
+                {/* Live indicator — orders update via socket */}
+                <div className="inline-flex h-11 items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-600">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Live
+                </div>
                 <button
                   type="button"
                   onClick={closeOrders}
@@ -773,6 +828,48 @@ const UserDashboard = () => {
                         </p>
                       </div>
                     </div>
+
+                    {/* ── Live tracking: show when rider assigned ── */}
+                    {order.deliveryStatus === "assigned" &&
+                      order.status !== "delivered" && (
+                      <div className="mt-4 border-t border-slate-100 pt-4">
+                        {trackingOrderId === order._id ? (
+                          <div>
+                            <div className="mb-2 flex items-center justify-between">
+                              <p className="text-xs font-extrabold uppercase tracking-widest text-[#ff5a36]">
+                                🛵 Live tracking
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => setTrackingOrderId(null)}
+                                className="text-xs font-semibold text-slate-400 transition hover:text-slate-600"
+                              >
+                                Close map
+                              </button>
+                            </div>
+                            <div className="h-64 overflow-hidden rounded-2xl border border-slate-200">
+                              <LiveTracking
+                                orderId={order._id}
+                                destLat={order.deliveryAddress?.latitude}
+                                destLng={order.deliveryAddress?.longitude}
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTrackingOrderId(order._id);
+                              socket.emit("join-order", order._id);
+                            }}
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[#ff5a36]/30 bg-[#fff7f3] px-4 py-2.5 text-sm font-bold text-[#ff5a36] transition hover:bg-[#ff5a36] hover:text-white"
+                          >
+                            <HiLocationMarker />
+                            Track live delivery
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </article>
                 ))
               )}
@@ -797,16 +894,11 @@ const UserDashboard = () => {
                   Top-rated shops ranked by menu variety and proximity
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={refreshDashboard}
-                className="inline-flex h-11 items-center gap-2 rounded-2xl border-2 border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 shadow-sm transition hover:border-[#ff5a36] hover:bg-[#fff7f3] hover:text-[#ff5a36] hover:shadow-md"
-              >
-                <HiOutlineRefresh
-                  className={shopsLoading || itemsLoading ? "animate-spin" : ""}
-                />
-                Refresh
-              </button>
+              {/* Live indicator replaces Refresh button */}
+              <div className="inline-flex h-11 items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-600">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                Live
+              </div>
             </div>
 
             <div className="flex snap-x gap-4 overflow-x-auto pb-2 [scrollbar-width:thin]">
