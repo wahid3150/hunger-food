@@ -169,12 +169,6 @@ const CartPage = () => {
                 </span>
               </div>
               <div className="flex justify-between text-slate-600">
-                <span>Subtotal</span>
-                <span className="font-black">
-                  PKR {subtotal.toLocaleString()}
-                </span>
-              </div>
-              <div className="flex justify-between text-slate-600">
                 <span>Delivery fee</span>
                 <span className="font-black">
                   PKR {subtotal > 0 ? DELIVERY_FEE : 0}
