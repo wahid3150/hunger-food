@@ -35,7 +35,7 @@ const CartPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
-      <DashboardNavbar />
+      <DashboardNavbar showCart showOrdersButton />
 
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
         <button
