@@ -8,13 +8,14 @@ import React, {
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   HiArrowLeft,
+  HiCheckCircle,
   HiChevronDown,
+  HiChevronRight,
   HiClock,
   HiFire,
-  HiHeart,
   HiLocationMarker,
   HiMinus,
   HiOutlineClipboardList,
@@ -22,7 +23,6 @@ import {
   HiOutlineShoppingBag,
   HiPlus,
   HiShoppingCart,
-  HiStar,
   HiX,
 } from "react-icons/hi";
 import { addToCart } from "../../redux/cartSlice";
@@ -59,6 +59,35 @@ const SORT_OPTIONS = [
   { value: "name_asc", label: "Name: A to Z" },
 ];
 
+const QUICK_CATEGORIES = [
+  { label: "🍕 Pizza", value: "pizza" },
+  { label: "🍔 Burger", value: "burger" },
+  { label: "🌮 Snacks", value: "snacks" },
+  { label: "🍜 Noodles", value: "noodles" },
+  { label: "🍗 Chicken", value: "chicken" },
+  { label: "🥗 Salad", value: "salad" },
+  { label: "🍰 Desserts", value: "desserts" },
+  { label: "🥤 Drinks", value: "drink" },
+  { label: "🥪 Sandwich", value: "sandwich" },
+  { label: "🍝 Pasta", value: "pasta" },
+];
+
+const STATUS_LABELS = {
+  pending: "Pending",
+  confirmed: "Confirmed",
+  preparing: "Preparing",
+  out_for_delivery: "On the way",
+  delivered: "Delivered",
+};
+
+const STEPPER_STEPS = [
+  { key: "pending", label: "Placed" },
+  { key: "confirmed", label: "Confirmed" },
+  { key: "preparing", label: "Preparing" },
+  { key: "out_for_delivery", label: "On the way" },
+  { key: "delivered", label: "Delivered" },
+];
+
 const FOOD_TYPE_LABELS = {
   veg: "Veg",
   "non-veg": "Non-Veg",
@@ -89,6 +118,7 @@ const isSameLocation = (a, b) => {
 const UserDashboard = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const cartItems = useSelector((state) => state.cart.items);
   const detectedCity = useSelector((state) => state.user.city);
 
@@ -103,6 +133,7 @@ const UserDashboard = () => {
   const [category, setCategory] = useState("");
   const [foodType, setFoodType] = useState("");
   const [sort, setSort] = useState("latest");
+  const [quickCategory, setQuickCategory] = useState("");
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -182,8 +213,8 @@ const UserDashboard = () => {
   }, [activeShopId, hasLocation, itemMatchesLocation, items]);
 
   const itemQueryKey = useMemo(
-    () => [activeShopId, search, category, foodType, sort].join("|"),
-    [activeShopId, category, foodType, search, sort],
+    () => [activeShopId, search, category || quickCategory, foodType, sort].join("|"),
+    [activeShopId, category, quickCategory, foodType, search, sort],
   );
 
   const fetchShops = useCallback(async () => {
@@ -436,10 +467,16 @@ const UserDashboard = () => {
   const clearFilters = () => {
     setSearch("");
     setCategory("");
+    setQuickCategory("");
     setFoodType("");
     setSort("latest");
     setPage(1);
   };
+
+  const cartItemIds = useMemo(
+    () => new Set(cartItems.map((ci) => ci.itemId || ci._id)),
+    [cartItems],
+  );
 
   const openOrders = () => {
     setShowOrders(true);
@@ -450,6 +487,13 @@ const UserDashboard = () => {
   const closeOrders = () => {
     setShowOrders(false);
   };
+
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get("orders") === "open") {
+      openOrders();
+      navigate("/", { replace: true });
+    }
+  }, [location.search]);
 
   const openShop = async (shop) => {
     setSelectedShopLoading(true);
@@ -568,19 +612,28 @@ const UserDashboard = () => {
     toast.success(`${titleCase(item.name)} added to cart`);
   };
 
+  const getStepIndex = (status) =>
+    STEPPER_STEPS.findIndex((s) => s.key === status);
+
   const renderMenuCard = (item) => {
     const quantity = Number(quantities[item._id] || 1);
+    const inCart = cartItemIds.has(item._id);
     return (
       <article
         key={item._id}
         onClick={() => openItemDetails(item)}
-        className="group flex h-full min-h-[400px] cursor-pointer flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white to-slate-50/50 shadow-md hover:shadow-xl transition hover:-translate-y-2 hover:border-[#ff5a36]/40 duration-300"
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === "Enter" && openItemDetails(item)}
+        className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-float)] transition-all duration-300 hover:-translate-y-1.5 hover:border-[#ff5a36]/30"
       >
         <div className="relative h-48 w-full flex-shrink-0 overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
           {item.image ? (
             <img
               src={item.image}
               alt={item.name}
+              loading="lazy"
+              decoding="async"
               className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
             />
           ) : (
@@ -588,78 +641,62 @@ const UserDashboard = () => {
               <HiOutlineShoppingBag className="text-5xl" />
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition" />
-          <span className="absolute left-3 top-3 rounded-full bg-white/95 backdrop-blur px-3 py-1.5 text-xs font-extrabold text-slate-700 shadow-md border border-white/50">
-            {titleCase(item.category)}
-          </span>
-          <button
-            type="button"
-            onClick={(event) => event.stopPropagation()}
-            className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/95 backdrop-blur text-slate-400 shadow-md border border-white/50 transition hover:bg-[#fff7f3] hover:text-[#ff5a36] hover:scale-110 group-hover:text-[#ff5a36]"
-            aria-label={`Save ${item.name}`}
-          >
-            <HiHeart className="text-lg" />
-          </button>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition duration-300" />
+          {inCart ? (
+            <span className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-emerald-500 px-3 py-1.5 text-xs font-extrabold text-white shadow-md">
+              <HiCheckCircle className="text-sm" /> In cart
+            </span>
+          ) : (
+            <span className="absolute left-3 top-3 rounded-full bg-white/95 backdrop-blur px-3 py-1.5 text-xs font-extrabold text-slate-700 shadow-md border border-white/50">
+              {titleCase(item.category)}
+            </span>
+          )}
         </div>
 
-        <div className="flex flex-1 flex-col p-5">
-          <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-1 flex-col p-4">
+          <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <h3 className="truncate text-base font-black capitalize text-slate-900">
+              <h3 className="truncate text-sm font-black capitalize text-slate-900">
                 {item.name}
               </h3>
-              <p className="mt-1.5 truncate text-xs font-semibold text-slate-500">
+              <p className="mt-1 truncate text-xs font-medium text-slate-500">
                 {item.shop?.name || selectedShop?.name || "Nearby shop"}
               </p>
             </div>
             <span
-              className={`rounded-full px-2.5 py-1 text-xs font-extrabold whitespace-nowrap border flex-shrink-0 ${
-                item.foodType === "veg"
-                  ? "bg-emerald-50 text-emerald-600 border-emerald-200"
-                  : "bg-orange-50 text-orange-600 border-orange-200"
-              }`}
+              className={`mt-0.5 flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-extrabold border ${item.foodType === "veg"
+                ? "bg-emerald-50 text-emerald-600 border-emerald-200"
+                : "bg-orange-50 text-orange-600 border-orange-200"
+                }`}
             >
               {FOOD_TYPE_LABELS[item.foodType] || "Food"}
             </span>
           </div>
 
-          <div className="mt-5 flex items-center justify-between gap-3">
-            <p className="text-xl font-black text-[#ff5a36]">
-              {formatPrice(item.price)}
-            </p>
+          <div className="mt-4 flex items-center justify-between gap-2">
+            <p className="text-lg font-black text-[#ff5a36]">{formatPrice(item.price)}</p>
             <div
-              className="flex items-center rounded-full border-2 border-slate-200 bg-white hover:border-[#ff5a36] transition"
-              onClick={(event) => event.stopPropagation()}
+              className="flex items-center rounded-full border border-slate-200 bg-slate-50 hover:border-[#ff5a36]/40 transition"
+              onClick={(e) => e.stopPropagation()}
             >
-              <button
-                type="button"
-                onClick={() => updateQuantity(item._id, -1)}
-                className="grid h-8 w-8 place-items-center text-slate-400 transition hover:text-[#ff5a36] hover:bg-[#fff7f3] rounded-l-lg"
-                aria-label={`Decrease ${item.name}`}
-              >
-                <HiMinus className="text-sm" />
+              <button type="button" onClick={() => updateQuantity(item._id, -1)}
+                className="grid h-7 w-7 place-items-center text-slate-400 hover:text-[#ff5a36] rounded-l-full transition"
+                aria-label={`Decrease ${item.name}`}>
+                <HiMinus className="text-xs" />
               </button>
-              <span className="w-8 text-center text-sm font-black text-slate-800">
-                {quantity}
-              </span>
-              <button
-                type="button"
-                onClick={() => updateQuantity(item._id, 1)}
-                className="grid h-8 w-8 place-items-center text-slate-400 transition hover:text-[#ff5a36] hover:bg-[#fff7f3] rounded-r-lg"
-                aria-label={`Increase ${item.name}`}
-              >
-                <HiPlus className="text-sm" />
+              <span className="w-6 text-center text-xs font-black text-slate-800">{quantity}</span>
+              <button type="button" onClick={() => updateQuantity(item._id, 1)}
+                className="grid h-7 w-7 place-items-center text-slate-400 hover:text-[#ff5a36] rounded-r-full transition"
+                aria-label={`Increase ${item.name}`}>
+                <HiPlus className="text-xs" />
               </button>
             </div>
           </div>
 
           <button
             type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              addMenuItemToCart(item);
-            }}
-            className="mt-auto inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-slate-900 to-slate-800 px-4 text-sm font-extrabold text-white shadow-md transition hover:shadow-lg hover:from-[#ff5a36] hover:to-[#ff4420] duration-300"
+            onClick={(e) => { e.stopPropagation(); addMenuItemToCart(item); }}
+            className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#ff5a36] to-[#ff6a46] text-sm font-extrabold text-white shadow-sm transition hover:shadow-md hover:from-[#e04e2d] hover:to-[#ff5a36] duration-200"
           >
             <HiShoppingCart className="text-sm" />
             Add to cart
@@ -670,39 +707,64 @@ const UserDashboard = () => {
   };
 
   const renderShopSkeletons = () =>
-    Array.from({ length: 4 }, (_, index) => (
-      <div
-        key={index}
-        className="h-[260px] w-[280px] flex-none rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:w-[330px]"
-      >
-        <div className="h-44 animate-pulse rounded-xl bg-slate-100" />
-        <div className="mt-3 h-4 w-2/3 animate-pulse rounded bg-slate-100" />
-        <div className="mt-2 h-3 w-1/2 animate-pulse rounded bg-slate-100" />
+    Array.from({ length: 4 }, (_, i) => (
+      <div key={i} className="h-[280px] min-w-[260px] flex-none rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
+        <div className="skeleton h-44 rounded-xl" />
+        <div className="mt-3 skeleton h-4 w-3/4 rounded-lg" />
+        <div className="mt-2 skeleton h-3 w-1/2 rounded-lg" />
       </div>
     ));
 
   const renderItemSkeletons = () =>
-    Array.from({ length: 6 }, (_, index) => (
-      <div
-        key={index}
-        className="h-[388px] rounded-2xl border border-slate-200 bg-white p-3 shadow-sm"
-      >
-        <div className="h-44 animate-pulse rounded-xl bg-slate-100" />
-        <div className="mt-4 h-4 w-3/4 animate-pulse rounded bg-slate-100" />
-        <div className="mt-2 h-3 w-1/2 animate-pulse rounded bg-slate-100" />
-        <div className="mt-4 h-10 animate-pulse rounded-xl bg-slate-100" />
+    Array.from({ length: 6 }, (_, i) => (
+      <div key={i} className="rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
+        <div className="skeleton h-44 rounded-xl" />
+        <div className="mt-4 skeleton h-4 w-3/4 rounded-lg" />
+        <div className="mt-2 skeleton h-3 w-1/2 rounded-lg" />
+        <div className="mt-4 skeleton h-10 rounded-xl" />
       </div>
     ));
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
       <DashboardNavbar
+        showSearch
+        showCart
+        showLocation
+        showOrdersButton
         searchValue={search}
         onSearchChange={setSearch}
         onOrdersClick={openOrders}
+        onHomeClick={closeOrders}
+        activeOrderCount={orders.filter((o) => o.status !== "delivered").length}
       />
 
-      <main className="mx-auto w-full max-w-7xl px-4 pb-10 pt-8 sm:px-6">
+      {!showOrders && isHomeView && (
+        <div className="gradient-hero border-b border-orange-100/60 px-4 py-6 sm:px-6 animate-fadeInUp">
+          <div className="mx-auto max-w-7xl">
+            <div className="mb-4">
+              <p className="text-xs font-semibold uppercase tracking-widest text-[#ff5a36]">
+                {new Date().getHours() < 12 ? "Good morning" : new Date().getHours() < 17 ? "Good afternoon" : "Good evening"} 👋
+              </p>
+              <h1 className="mt-1 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+                What are you <span className="text-[#ff5a36]">craving</span> today?
+              </h1>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
+              {QUICK_CATEGORIES.map((cat) => (
+                <span
+                  key={cat.value}
+                  className="flex-none cursor-default select-none whitespace-nowrap rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700"
+                >
+                  {cat.label}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <main className="mx-auto w-full max-w-7xl px-4 pb-16 pt-6 sm:px-6">
         {showOrders && (
           <section className="rounded-[32px] border border-[#ff5a36]/20 bg-gradient-to-br from-white to-slate-50/50 p-6 shadow-[0_20px_60px_rgba(255,90,54,0.08)]">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -718,7 +780,6 @@ const UserDashboard = () => {
                 </p>
               </div>
               <div className="flex gap-3">
-                {/* Live indicator — orders update via socket */}
                 <div className="inline-flex h-11 items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-600">
                   <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                   Live
@@ -734,236 +795,193 @@ const UserDashboard = () => {
               </div>
             </div>
 
-            <div className="mt-6 space-y-4">
+            <div className="mt-6 space-y-4" aria-busy={ordersLoading}>
               {ordersLoading ? (
-                [1, 2, 3].map((item) => (
-                  <div
-                    key={item}
-                    className="h-32 animate-pulse rounded-3xl bg-slate-100"
-                  />
-                ))
+                [1, 2, 3].map((n) => <div key={n} className="skeleton h-36 rounded-2xl" />)
               ) : orders.length === 0 ? (
-                <div className="rounded-3xl border border-slate-200 bg-slate-50 px-5 py-12 text-center">
-                  <HiOutlineClipboardList className="mx-auto text-5xl text-slate-300" />
-                  <p className="mt-3 font-extrabold text-slate-800">
-                    No orders yet
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-slate-500">
-                    Your placed orders will appear here.
-                  </p>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-14 text-center animate-fadeInUp">
+                  <div className="text-5xl">📋</div>
+                  <p className="mt-3 text-lg font-black text-slate-800">No orders yet</p>
+                  <p className="mt-1 text-sm font-medium text-slate-500">Your placed orders will appear here.</p>
+                  <button type="button" onClick={closeOrders}
+                    className="mt-5 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#ff5a36] to-[#ff6a46] px-5 py-2.5 text-sm font-extrabold text-white shadow-md transition hover:shadow-lg hover:from-[#e04e2d]">
+                    <HiOutlineShoppingBag className="text-base" /> Browse food
+                  </button>
                 </div>
               ) : (
-                orders.map((order) => (
-                  <article
-                    key={order._id}
-                    className="rounded-3xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/50 p-5 shadow-md hover:shadow-lg transition duration-300 hover:border-[#ff5a36]/30"
-                  >
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                      <div className="flex gap-3">
-                        <div className="h-16 w-16 overflow-hidden rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 ring-2 ring-[#ff5a36]/10 flex-shrink-0">
-                          {order.shop?.image ? (
-                            <img
-                              src={order.shop.image}
-                              alt={order.shop?.name}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : null}
-                        </div>
-                        <div>
-                          <h2 className="text-base font-black text-slate-950">
-                            {order.shop?.name || "Shop order"}
-                          </h2>
-                          <p className="mt-1 text-xs font-semibold text-slate-400">
-                            {new Date(order.createdAt).toLocaleString()}
-                          </p>
-                          <span
-                            className={`mt-2 inline-flex rounded-full px-3 py-1 text-xs font-extrabold capitalize border ${
-                              String(order.status || "pending") === "delivered"
-                                ? "bg-emerald-50 text-emerald-600 border-emerald-200"
-                                : String(order.status || "pending") ===
-                                    "pending"
-                                  ? "bg-yellow-50 text-yellow-600 border-yellow-200"
-                                  : "bg-[#fff0eb] text-[#ff5a36] border-[#ff5a36]/30"
-                            }`}
-                          >
-                            {String(order.status || "pending").replaceAll(
-                              "_",
-                              " ",
-                            )}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-left lg:text-right">
-                        <p className="text-xs font-bold text-slate-400">
-                          Total
-                        </p>
-                        <p className="text-xl font-black text-slate-950">
-                          PKR {Number(order.totalAmount || 0).toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-4 grid gap-3 border-t border-slate-100 pt-4 md:grid-cols-[1fr_280px]">
-                      <div className="space-y-2">
-                        {(order.items || []).map((item) => (
-                          <div
-                            key={`${order._id}-${item.item}`}
-                            className="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-2 text-sm"
-                          >
-                            <span className="font-bold capitalize text-slate-700">
-                              {item.name}
-                            </span>
-                            <span className="font-semibold text-slate-500">
-                              {item.quantity} x PKR{" "}
-                              {Number(item.price || 0).toLocaleString()}
-                            </span>
+                orders.map((order) => {
+                  const stepIdx = getStepIndex(order.status || "pending");
+                  const st = order.status || "pending";
+                  return (
+                    <article key={order._id}
+                      className="animate-fadeInUp rounded-2xl border border-slate-200/70 bg-white p-5 shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-float)] transition duration-300 hover:border-[#ff5a36]/25"
+                    >
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100 ring-2 ring-[#ff5a36]/10">
+                            {order.shop?.image ? (
+                              <img src={order.shop.image} alt={order.shop?.name}
+                                loading="lazy" className="h-full w-full object-cover" />
+                            ) : <div className="grid h-full place-items-center text-slate-300"><HiOutlineShoppingBag /></div>}
                           </div>
-                        ))}
-                      </div>
-                      <div className="rounded-2xl bg-slate-50 p-3">
-                        <p className="text-xs font-bold text-slate-400">
-                          Delivery address
-                        </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-600">
-                          {order.deliveryAddress?.text || "No address saved"}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* ── Live tracking: show when rider assigned ── */}
-                    {order.deliveryStatus === "assigned" &&
-                      order.status !== "delivered" && (
-                      <div className="mt-4 border-t border-slate-100 pt-4">
-                        {trackingOrderId === order._id ? (
                           <div>
-                            <div className="mb-2 flex items-center justify-between">
-                              <p className="text-xs font-extrabold uppercase tracking-widest text-[#ff5a36]">
-                                🛵 Live tracking
-                              </p>
-                              <button
-                                type="button"
-                                onClick={() => setTrackingOrderId(null)}
-                                className="text-xs font-semibold text-slate-400 transition hover:text-slate-600"
-                              >
-                                Close map
-                              </button>
-                            </div>
-                            <div className="h-64 overflow-hidden rounded-2xl border border-slate-200">
-                              <LiveTracking
-                                orderId={order._id}
-                                destLat={order.deliveryAddress?.latitude}
-                                destLng={order.deliveryAddress?.longitude}
-                              />
-                            </div>
+                            <h2 className="text-sm font-black text-slate-900">{order.shop?.name || "Shop order"}</h2>
+                            <p className="mt-0.5 text-xs text-slate-400">{new Date(order.createdAt).toLocaleString()}</p>
+                            <span className={`mt-1.5 inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-extrabold border ${st === "delivered" ? "bg-emerald-50 text-emerald-600 border-emerald-200"
+                              : st === "pending" ? "bg-yellow-50 text-yellow-600 border-yellow-200"
+                                : "bg-[#fff0eb] text-[#ff5a36] border-[#ff5a36]/30"
+                              }`}>
+                              {STATUS_LABELS[st] || st}
+                            </span>
                           </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setTrackingOrderId(order._id);
-                              socket.emit("join-order", order._id);
-                            }}
-                            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[#ff5a36]/30 bg-[#fff7f3] px-4 py-2.5 text-sm font-bold text-[#ff5a36] transition hover:bg-[#ff5a36] hover:text-white"
-                          >
-                            <HiLocationMarker />
-                            Track live delivery
-                          </button>
-                        )}
+                        </div>
+                        <div className="text-left sm:text-right">
+                          <p className="text-xs font-bold text-slate-400">Total</p>
+                          <p className="text-xl font-black text-slate-900">PKR {Number(order.totalAmount || 0).toLocaleString()}</p>
+                        </div>
                       </div>
-                    )}
-                  </article>
-                ))
+
+                      <div className="mt-4 overflow-x-auto">
+                        <div className="relative flex min-w-[480px] items-center justify-between px-2">
+                          <div className="stepper-line">
+                            <div className="stepper-line-fill" style={{ width: `${(stepIdx / (STEPPER_STEPS.length - 1)) * 100}%` }} />
+                          </div>
+                          {STEPPER_STEPS.map((step, i) => {
+                            const done = i <= stepIdx;
+                            const active = i === stepIdx;
+                            return (
+                              <div key={step.key} className="relative z-10 flex flex-col items-center gap-1">
+                                <div className={`grid h-7 w-7 place-items-center rounded-full border-2 text-xs font-extrabold transition ${done
+                                  ? "border-[#ff5a36] bg-[#ff5a36] text-white" + (active ? " stepper-node-active" : "")
+                                  : "border-slate-300 bg-white text-slate-400"
+                                  }`}>
+                                  {done && !active ? <HiCheckCircle className="text-sm" /> : i + 1}
+                                </div>
+                                <p className={`text-[10px] font-bold ${done ? "text-[#ff5a36]" : "text-slate-400"
+                                  }`}>{step.label}</p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div className="mt-4 grid gap-3 border-t border-slate-100 pt-4 md:grid-cols-[1fr_260px]">
+                        <div className="space-y-1.5">
+                          {(order.items || []).map((item) => (
+                            <div key={`${order._id}-${item.item}`}
+                              className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-sm">
+                              <span className="font-bold capitalize text-slate-700">{item.name}</span>
+                              <span className="font-semibold text-slate-500">
+                                {item.quantity} × PKR {Number(item.price || 0).toLocaleString()}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="rounded-xl bg-slate-50 p-3">
+                          <p className="text-xs font-bold text-slate-400">Delivery address</p>
+                          <p className="mt-1 text-sm font-semibold text-slate-600">{order.deliveryAddress?.text || "No address saved"}</p>
+                        </div>
+                      </div>
+
+                      {order.deliveryStatus === "assigned" && order.status !== "delivered" && (
+                        <div className="mt-4 border-t border-slate-100 pt-4">
+                          {trackingOrderId === order._id ? (
+                            <div>
+                              <div className="mb-2 flex items-center justify-between">
+                                <p className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-widest text-[#ff5a36]">
+                                  <span className="h-2 w-2 rounded-full bg-[#ff5a36] animate-pulse" /> Live tracking
+                                </p>
+                                <button type="button" onClick={() => setTrackingOrderId(null)}
+                                  className="text-xs font-semibold text-slate-400 hover:text-slate-600 transition">
+                                  Close map
+                                </button>
+                              </div>
+                              <div className="h-64 overflow-hidden rounded-xl border border-slate-200">
+                                <LiveTracking orderId={order._id}
+                                  destLat={order.deliveryAddress?.latitude}
+                                  destLng={order.deliveryAddress?.longitude} />
+                              </div>
+                            </div>
+                          ) : (
+                            <button type="button"
+                              onClick={() => { setTrackingOrderId(order._id); socket.emit("join-order", order._id); }}
+                              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#ff5a36] to-[#ff6a46] px-4 py-2.5 text-sm font-extrabold text-white shadow-md transition hover:shadow-lg hover:from-[#e04e2d]">
+                              <HiLocationMarker /> 🛵 Track live delivery
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </article>
+                  );
+                })
               )}
             </div>
           </section>
         )}
 
         {!showOrders && isHomeView && (
-          <section className="rounded-3xl border border-[#ff5a36]/20 bg-gradient-to-br from-white via-white to-slate-50/30 px-5 py-6 shadow-[0_20px_60px_rgba(255,90,54,0.08)] sm:px-6">
-            <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+          <section className="mt-6 animate-fadeInUp">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff5a36]/10 to-orange-100/50 px-4 py-2 text-xs font-extrabold text-[#ff5a36] border border-[#ff5a36]/20">
-                  <HiFire className="text-lg" />
-                  {hasLocation
-                    ? `Near ${detectedCity}`
-                    : "Enable location for nearby picks"}
+                <div className="inline-flex items-center gap-2 rounded-full bg-[#fff0eb] px-3 py-1.5 text-xs font-extrabold text-[#ff5a36] border border-[#ff5a36]/20">
+                  <HiFire className="text-sm" />
+                  {hasLocation ? `Near ${detectedCity}` : "Featured shops"}
                 </div>
-                <h2 className="mt-3 text-3xl font-black tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
-                  🏪 Featured Shops
-                </h2>
-                <p className="mt-2 text-sm font-semibold text-slate-500">
-                  Top-rated shops ranked by menu variety and proximity
-                </p>
+                <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-900">🏪 Featured Shops</h2>
+                <p className="mt-1 text-sm font-medium text-slate-500">Top shops ranked by menu variety and proximity</p>
               </div>
-              {/* Live indicator replaces Refresh button */}
-              <div className="inline-flex h-11 items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-600">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                Live
+              <div className="inline-flex h-9 items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-600">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live
               </div>
             </div>
 
-            <div className="flex snap-x gap-4 overflow-x-auto pb-2 [scrollbar-width:thin]">
+            <div className="scroll-fade-r flex snap-x gap-4 overflow-x-auto pb-3 [scrollbar-width:thin]">
               {shopsLoading
                 ? renderShopSkeletons()
                 : topShops.map((shop, index) => (
-                    <button
-                      key={shop._id}
-                      type="button"
-                      onClick={() => openShop(shop)}
-                      className={`group relative flex h-[280px] w-[280px] flex-none snap-start flex-col overflow-hidden rounded-3xl border bg-gradient-to-br from-white to-slate-50/50 text-left shadow-md transition hover:-translate-y-2 hover:shadow-xl sm:w-[330px] ${
-                        activeShopId === shop._id
-                          ? "border-2 border-[#ff5a36] ring-2 ring-[#ff5a36]/20 from-white to-[#fff7f3]"
-                          : "border-slate-200/80 hover:border-[#ff5a36]/50"
+                  <button
+                    key={shop._id}
+                    type="button"
+                    onClick={() => openShop(shop)}
+                    className={`group relative flex h-[270px] min-w-[250px] flex-none snap-start flex-col overflow-hidden rounded-2xl border bg-white text-left shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[var(--shadow-float)] sm:min-w-[290px] ${activeShopId === shop._id
+                      ? "border-2 border-[#ff5a36] ring-2 ring-[#ff5a36]/15"
+                      : "border-slate-200/80 hover:border-[#ff5a36]/40"
                       }`}
-                    >
-                      <div className="relative h-44 w-full flex-shrink-0 overflow-hidden bg-slate-100">
-                        {shop.image ? (
-                          <img
-                            src={shop.image}
-                            alt={shop.name}
-                            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                          />
-                        ) : (
-                          <div className="grid h-full place-items-center text-slate-400">
-                            <HiOutlineShoppingBag className="text-4xl" />
-                          </div>
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/45 via-transparent to-transparent" />
-                        <span className="absolute left-3 top-3 rounded-full bg-gradient-to-r from-slate-950 to-slate-800 px-3 py-1.5 text-xs font-extrabold text-white backdrop-blur shadow-lg">
-                          🏆 #{index + 1}
-                        </span>
-                        {shop.isNearby && (
-                          <span className="absolute right-3 top-3 rounded-full bg-gradient-to-r from-[#ff5a36] to-[#ff4420] px-3 py-1.5 text-xs font-extrabold text-white shadow-lg animate-pulse">
-                            📍 Near you
-                          </span>
-                        )}
-                        <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-white/95 backdrop-blur px-3 py-1.5 text-xs font-extrabold text-[#ff5a36] shadow-md border border-white/50">
-                          <HiOutlineShoppingBag className="text-sm" />
-                          {shop.availableItemCount} items
-                        </span>
-                      </div>
-                      <div className="flex flex-1 flex-col p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <h3 className="truncate text-lg font-black text-slate-950">
-                              {shop.name}
-                            </h3>
-                            <p className="mt-1.5 flex items-center gap-1.5 truncate text-xs font-semibold text-slate-500">
-                              <HiLocationMarker className="text-[#ff5a36] text-sm flex-shrink-0" />
-                              {shop.city}, {shop.state}
-                            </p>
-                          </div>
-                          <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-50 to-yellow-50 px-2.5 py-1.5 text-xs font-extrabold text-amber-600 border border-amber-200/50">
-                            <HiStar className="text-sm" />
-                            4.8
-                          </span>
+                  >
+                    <div className="relative h-44 w-full flex-shrink-0 overflow-hidden bg-slate-100">
+                      {shop.image ? (
+                        <img src={shop.image} alt={shop.name} loading="lazy" decoding="async"
+                          className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                      ) : (
+                        <div className="grid h-full place-items-center text-slate-400">
+                          <HiOutlineShoppingBag className="text-4xl" />
                         </div>
-                        <p className="mt-auto inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 group-hover:text-[#ff5a36] transition">
-                          <HiClock className="text-sm" />
-                          View menu →
-                        </p>
-                      </div>
-                    </button>
-                  ))}
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 via-transparent to-transparent" />
+                      <span className="absolute left-3 top-3 rounded-full bg-black/70 backdrop-blur px-2.5 py-1 text-xs font-extrabold text-white">
+                        #{index + 1}
+                      </span>
+                      {shop.isNearby && (
+                        <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-emerald-500 px-2.5 py-1 text-xs font-extrabold text-white shadow">
+                          <span className="h-1.5 w-1.5 rounded-full bg-white" /> Nearby
+                        </span>
+                      )}
+                      <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-white/95 backdrop-blur px-2.5 py-1 text-xs font-extrabold text-[#ff5a36]">
+                        <HiOutlineShoppingBag className="text-xs" /> {shop.availableItemCount} items
+                      </span>
+                    </div>
+                    <div className="flex flex-1 flex-col p-3">
+                      <h3 className="truncate text-sm font-black text-slate-900">{shop.name}</h3>
+                      <p className="mt-1 flex items-center gap-1 truncate text-xs font-medium text-slate-500">
+                        <HiLocationMarker className="text-[#ff5a36] flex-shrink-0" />
+                        {shop.city}{shop.state ? `, ${shop.state}` : ""}
+                      </p>
+                      <p className="mt-auto flex items-center gap-1 text-xs font-bold text-slate-400 group-hover:text-[#ff5a36] transition">
+                        <HiClock className="text-xs" /> View menu →
+                      </p>
+                    </div>
+                  </button>
+                ))}
             </div>
 
             {!shopsLoading && topShops.length === 0 && (
@@ -972,10 +990,8 @@ const UserDashboard = () => {
                 <p className="mt-3 font-extrabold text-slate-800">
                   {hasLocation ? "No nearby shops found" : "No shops found"}
                 </p>
-                <p className="mt-1 text-sm font-medium text-slate-500">
-                  {hasLocation
-                    ? "We could not match shops to your detected city yet."
-                    : "Allow location access or try a different search."}
+                <p className="mt-1 text-sm text-slate-500">
+                  {hasLocation ? "We couldn't match shops to your detected city yet." : "Allow location access or try a different search."}
                 </p>
               </div>
             )}
@@ -1031,23 +1047,30 @@ const UserDashboard = () => {
         )}
 
         {!showOrders && selectedItemLoading && !selectedItem && (
-          <section className="mt-7 rounded-3xl border border-slate-200 bg-white px-5 py-10 text-center shadow-sm">
-            <HiOutlineRefresh className="mx-auto animate-spin text-3xl text-[#ff5a36]" />
-            <p className="mt-3 text-sm font-bold text-slate-600">
-              Loading item details
-            </p>
+          <section className="mt-6 rounded-2xl border border-slate-200 bg-white px-5 py-10 text-center shadow-sm">
+            <div className="animate-spin mx-auto h-8 w-8 rounded-full border-4 border-slate-200 border-t-[#ff5a36]" />
+            <p className="mt-3 text-sm font-bold text-slate-600">Loading item details…</p>
           </section>
         )}
 
         {!showOrders && selectedItem && (
-          <section className="mt-7">
-            <button
-              type="button"
-              onClick={closeItemDetails}
-              className="mb-4 inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 shadow-sm transition hover:border-[#ff5a36]/30 hover:bg-[#fff7f3] hover:text-[#ff5a36]"
-            >
-              <HiArrowLeft />
-              Back to menu
+          <section className="mt-6 animate-fadeInUp">
+            {/* Breadcrumb */}
+            <nav className="mb-4 flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+              <button type="button" onClick={closeItemDetails}
+                className="hover:text-[#ff5a36] transition">Menu</button>
+              {selectedShop && (
+                <><HiChevronRight className="text-slate-400" />
+                  <button type="button" onClick={closeItemDetails}
+                    className="hover:text-[#ff5a36] transition">{selectedShop.name}</button></>
+              )}
+              <HiChevronRight className="text-slate-400" />
+              <span className="truncate text-slate-800 font-bold capitalize">{selectedItem.name}</span>
+            </nav>
+
+            <button type="button" onClick={closeItemDetails}
+              className="mb-4 inline-flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-600 shadow-sm transition hover:border-[#ff5a36]/30 hover:bg-[#fff7f3] hover:text-[#ff5a36]">
+              <HiArrowLeft className="text-base" /> Back
             </button>
 
             <div className="grid gap-6 rounded-3xl border border-slate-200/80 bg-white p-4 shadow-[0_18px_55px_rgba(15,23,42,0.06)] lg:grid-cols-[440px_1fr]">
@@ -1082,48 +1105,65 @@ const UserDashboard = () => {
                     </p>
                   </div>
                   <span
-                    className={`rounded-full px-3 py-1 text-xs font-extrabold ${
-                      selectedItem.foodType === "veg"
-                        ? "bg-emerald-50 text-emerald-600"
-                        : "bg-orange-50 text-orange-600"
-                    }`}
+                    className={`rounded-full px-3 py-1 text-xs font-extrabold ${selectedItem.foodType === "veg"
+                      ? "bg-emerald-50 text-emerald-600"
+                      : "bg-orange-50 text-orange-600"
+                      }`}
                   >
                     {FOOD_TYPE_LABELS[selectedItem.foodType] || "Food"}
                   </span>
                 </div>
 
-                <p className="mt-8 text-3xl font-extrabold text-[#ff5a36]">
+                <p className="mt-6 text-3xl font-extrabold text-[#ff5a36]">
                   {formatPrice(selectedItem.price)}
                 </p>
-                <p className="mt-4 max-w-xl text-sm font-medium leading-6 text-slate-500">
-                  Freshly listed by the shop and currently available for order.
-                  Add it to your cart or explore more items from the same menu.
-                </p>
 
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl bg-slate-50 p-4">
-                    <p className="text-xs font-bold text-slate-400">Category</p>
-                    <p className="mt-1 font-extrabold text-slate-800">
-                      {titleCase(selectedItem.category)}
-                    </p>
+                {/* Info rows */}
+                <div className="mt-5 space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-slate-600">
+                    <span className="text-base">🏷️</span>
+                    <span className="font-semibold text-slate-400">Category</span>
+                    <span className="font-extrabold text-slate-800">{titleCase(selectedItem.category)}</span>
                   </div>
-                  <div className="rounded-2xl bg-slate-50 p-4">
-                    <p className="text-xs font-bold text-slate-400">
-                      Food type
-                    </p>
-                    <p className="mt-1 font-extrabold text-slate-800">
-                      {FOOD_TYPE_LABELS[selectedItem.foodType] || "Food"}
-                    </p>
+                  <div className="flex items-center gap-2 text-sm text-slate-600">
+                    <span className="text-base">{selectedItem.foodType === "veg" ? "🌿" : "🍗"}</span>
+                    <span className="font-semibold text-slate-400">Type</span>
+                    <span className={`font-extrabold ${selectedItem.foodType === "veg" ? "text-emerald-600" : "text-orange-600"
+                      }`}>{FOOD_TYPE_LABELS[selectedItem.foodType] || "Food"}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-slate-600">
+                    <span className="text-base">🏪</span>
+                    <span className="font-semibold text-slate-400">Shop</span>
+                    <span className="font-extrabold text-slate-800">{selectedItem.shop?.name || selectedShop?.name || "—"}</span>
                   </div>
                 </div>
 
-                <button
-                  type="button"
+                <div className="mt-6 flex items-center gap-4">
+                  <p className="text-sm font-bold text-slate-500">Quantity</p>
+                  <div className="flex items-center rounded-full border-2 border-slate-200 bg-white">
+                    <button type="button"
+                      onClick={() => updateQuantity(selectedItem._id, -1)}
+                      className="grid h-9 w-9 place-items-center text-slate-400 hover:text-[#ff5a36] rounded-l-full transition"
+                      aria-label="Decrease quantity">
+                      <HiMinus className="text-sm" />
+                    </button>
+                    <span className="w-10 text-center text-sm font-black text-slate-800">
+                      {quantities[selectedItem._id] || 1}
+                    </span>
+                    <button type="button"
+                      onClick={() => updateQuantity(selectedItem._id, 1)}
+                      className="grid h-9 w-9 place-items-center text-slate-400 hover:text-[#ff5a36] rounded-r-full transition"
+                      aria-label="Increase quantity">
+                      <HiPlus className="text-sm" />
+                    </button>
+                  </div>
+                </div>
+
+                <button type="button"
                   onClick={() => addMenuItemToCart(selectedItem)}
-                  className="mt-7 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 text-sm font-extrabold text-white shadow-sm transition hover:bg-[#ff5a36] sm:w-56 lg:mt-auto"
+                  className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#ff5a36] to-[#ff6a46] text-sm font-extrabold text-white shadow-md transition hover:shadow-lg hover:from-[#e04e2d] lg:mt-auto"
                 >
-                  <HiShoppingCart />
-                  Add to cart
+                  <HiShoppingCart /> Add to cart
                 </button>
               </div>
             </div>
@@ -1178,142 +1218,125 @@ const UserDashboard = () => {
         )}
 
         {!showOrders && !selectedItem && (
-          <section className="mt-10">
-            <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <section className="mt-8 animate-fadeInUp">
+            <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <h2 className="text-3xl font-black tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
+                <h2 className="text-2xl font-black tracking-tight text-slate-900">
                   {selectedShop
                     ? `🍽️ ${selectedShop.name} Menu`
                     : hasLocation
-                      ? `🔥 Items near ${detectedCity}`
+                      ? `🔥 Near ${detectedCity}`
                       : "📱 Explore Menu"}
                 </h2>
-                <p className="mt-2 text-sm font-semibold text-slate-500">
+                <p className="mt-1 text-xs font-semibold text-slate-400">
                   {activeShopId
-                    ? `Showing ${visibleItems.length} of ${totalItems} available item${totalItems !== 1 ? "s" : ""}`
-                    : `Showing ${visibleItems.length} location-based item${visibleItems.length !== 1 ? "s" : ""}`}
+                    ? `${visibleItems.length} of ${totalItems} item${totalItems !== 1 ? "s" : ""}`
+                    : `${visibleItems.length} item${visibleItems.length !== 1 ? "s" : ""}`}
+                  {(category || quickCategory) && ` · `}
+                  {(category || quickCategory) && <span className="text-[#ff5a36] font-bold">{titleCase(category || quickCategory)}</span>}
+                  {foodType && ` · `}
+                  {foodType && <span className="text-[#ff5a36] font-bold">{FOOD_TYPE_LABELS[foodType]}</span>}
+                  {sort !== "latest" && ` · `}
+                  {sort !== "latest" && <span className="text-slate-500">{SORT_OPTIONS.find((o) => o.value === sort)?.label}</span>}
                 </p>
               </div>
 
-              <div className="flex flex-wrap gap-2 rounded-2xl border-2 border-slate-200/80 bg-white p-3 shadow-md">
+              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
                 <label className="relative">
-                  <select
-                    value={category}
-                    onChange={(event) => setCategory(event.target.value)}
-                    className="h-10 appearance-none rounded-xl border-2 border-slate-200 bg-slate-50 pl-3 pr-9 text-sm font-bold text-slate-600 outline-none transition hover:border-[#ff5a36] focus:border-[#ff5a36] focus:bg-white hover:bg-white"
-                    aria-label="Filter by category"
-                  >
+                  <select value={category} onChange={(e) => { setCategory(e.target.value); setQuickCategory(""); }}
+                    className="custom-select h-9 rounded-lg border border-slate-200 bg-slate-50 pl-3 pr-8 text-sm font-semibold text-slate-600 outline-none transition hover:border-[#ff5a36]/50 focus:border-[#ff5a36] focus:bg-white"
+                    aria-label="Filter by category">
                     <option value="">All categories</option>
-                    {CATEGORIES.map((option) => (
-                      <option key={option} value={option}>
-                        {titleCase(option)}
-                      </option>
-                    ))}
+                    {CATEGORIES.map((opt) => <option key={opt} value={opt}>{titleCase(opt)}</option>)}
                   </select>
-                  <HiChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <HiChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
                 </label>
 
                 <label className="relative">
-                  <select
-                    value={foodType}
-                    onChange={(event) => setFoodType(event.target.value)}
-                    className="h-10 appearance-none rounded-xl border-2 border-slate-200 bg-slate-50 pl-3 pr-9 text-sm font-bold text-slate-600 outline-none transition hover:border-[#ff5a36] focus:border-[#ff5a36] focus:bg-white hover:bg-white"
-                    aria-label="Filter by food type"
-                  >
+                  <select value={foodType} onChange={(e) => setFoodType(e.target.value)}
+                    className="custom-select h-9 rounded-lg border border-slate-200 bg-slate-50 pl-3 pr-8 text-sm font-semibold text-slate-600 outline-none transition hover:border-[#ff5a36]/50 focus:border-[#ff5a36] focus:bg-white"
+                    aria-label="Filter by food type">
                     <option value="">All types</option>
                     <option value="veg">🥬 Veg</option>
                     <option value="non-veg">🍗 Non-Veg</option>
                   </select>
-                  <HiChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <HiChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
                 </label>
 
                 <label className="relative">
-                  <select
-                    value={sort}
-                    onChange={(event) => setSort(event.target.value)}
-                    className="h-10 appearance-none rounded-xl border-2 border-slate-200 bg-slate-50 pl-3 pr-9 text-sm font-bold text-slate-600 outline-none transition hover:border-[#ff5a36] focus:border-[#ff5a36] focus:bg-white hover:bg-white"
-                    aria-label="Sort menu items"
-                  >
-                    {SORT_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
+                  <select value={sort} onChange={(e) => setSort(e.target.value)}
+                    className="custom-select h-9 rounded-lg border border-slate-200 bg-slate-50 pl-3 pr-8 text-sm font-semibold text-slate-600 outline-none transition hover:border-[#ff5a36]/50 focus:border-[#ff5a36] focus:bg-white"
+                    aria-label="Sort items">
+                    {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
-                  <HiChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <HiChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
                 </label>
 
-                {(search || category || foodType || sort !== "latest") && (
-                  <button
-                    type="button"
-                    onClick={clearFilters}
-                    className="h-10 rounded-xl bg-gradient-to-r from-slate-900 to-slate-800 px-4 text-sm font-bold text-white transition hover:from-[#ff5a36] hover:to-[#ff4420] shadow-md"
-                  >
-                    Clear filters
+                {(search || category || quickCategory || foodType || sort !== "latest") && (
+                  <button type="button" onClick={clearFilters}
+                    className="flex items-center gap-1 rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold text-white transition hover:bg-[#ff5a36]">
+                    <HiX className="text-xs" /> Clear
                   </button>
                 )}
               </div>
             </div>
 
             {selectedShopLoading ? (
-              <div className="rounded-3xl border-2 border-slate-200 bg-gradient-to-br from-white to-slate-50 px-5 py-10 text-center shadow-md">
-                <HiOutlineRefresh className="mx-auto animate-spin text-4xl text-[#ff5a36]" />
-                <p className="mt-4 text-sm font-bold text-slate-600">
-                  Opening shop menu...
-                </p>
+              <div className="rounded-2xl border border-slate-200 bg-white px-5 py-10 text-center shadow-sm">
+                <div className="animate-spin mx-auto h-8 w-8 rounded-full border-4 border-slate-200 border-t-[#ff5a36]" />
+                <p className="mt-4 text-sm font-bold text-slate-600">Opening shop menu…</p>
               </div>
             ) : (
-              <div className="grid auto-rows-fr gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {itemsLoading
-                  ? renderItemSkeletons()
-                  : visibleItems.map((item) => renderMenuCard(item))}
+              <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" aria-busy={itemsLoading}>
+                {itemsLoading ? renderItemSkeletons() : visibleItems.map((item) => renderMenuCard(item))}
               </div>
             )}
 
-            {!itemsLoading &&
-              !selectedShopLoading &&
-              visibleItems.length === 0 && (
-                <div className="rounded-3xl border-2 border-slate-200 bg-gradient-to-br from-white to-slate-50/50 px-6 py-16 text-center shadow-md sm:col-span-2 lg:col-span-3 xl:col-span-4">
-                  <div className="text-6xl mb-3">🍽️</div>
-                  <p className="mt-2 font-black text-slate-800 text-lg">
-                    No menu items found
-                  </p>
-                  <p className="mt-2 text-sm font-medium text-slate-500">
-                    {hasLocation && !activeShopId
-                      ? "No location-based items found yet. Try another search or category."
-                      : "Try clearing filters or choosing another shop."}
-                  </p>
-                </div>
-              )}
+            {!itemsLoading && !selectedShopLoading && visibleItems.length === 0 && (
+              <div className="rounded-2xl border border-slate-100 bg-slate-50 px-6 py-16 text-center">
+                <div className="text-5xl">🍽️</div>
+                <p className="mt-3 text-lg font-black text-slate-800">No items found</p>
+                <p className="mt-1 text-sm text-slate-500">
+                  {hasLocation && !activeShopId
+                    ? "No location-based items found. Try another search or category."
+                    : "Try clearing filters or choosing another shop."}
+                </p>
+                <button type="button" onClick={clearFilters}
+                  className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[#ff5a36] px-4 py-2 text-sm font-extrabold text-white shadow-md transition hover:bg-[#e04e2d]">
+                  <HiX className="text-sm" /> Clear filters
+                </button>
+              </div>
+            )}
 
-            {!activeShopId &&
-              !itemsLoading &&
-              page < totalPages &&
-              visibleItems.length > 0 && (
-                <div className="mt-8 flex justify-center">
-                  <button
-                    type="button"
-                    onClick={() => setPage((current) => current + 1)}
-                    className="inline-flex h-12 items-center justify-center rounded-2xl bg-gradient-to-r from-slate-900 to-slate-800 px-8 text-sm font-extrabold text-white shadow-lg transition hover:-translate-y-1 hover:shadow-xl hover:from-[#ff5a36] hover:to-[#ff4420] duration-300"
-                  >
-                    📍 Load more items
-                  </button>
-                </div>
-              )}
+            {!activeShopId && !itemsLoading && page < totalPages && visibleItems.length > 0 && (
+              <div className="mt-8 flex justify-center">
+                <button type="button" onClick={() => setPage((p) => p + 1)}
+                  className="inline-flex h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-[#ff5a36] to-[#ff6a46] px-8 text-sm font-extrabold text-white shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl hover:from-[#e04e2d] duration-200">
+                  Load more items
+                </button>
+              </div>
+            )}
           </section>
         )}
 
         {cartCount > 0 && (
-          <button
-            type="button"
-            onClick={() => navigate("/cart")}
-            className="fixed bottom-5 left-1/2 z-40 inline-flex h-12 -translate-x-1/2 items-center gap-3 rounded-full bg-gradient-to-r from-slate-900 to-slate-800 px-6 text-sm font-extrabold text-white shadow-2xl transition hover:-translate-y-1 hover:shadow-3xl hover:from-[#ff5a36] hover:to-[#ff4420] md:hidden"
+          <button type="button" onClick={() => navigate("/cart")}
+            className="fixed bottom-6 right-5 z-40 hidden items-center gap-2.5 rounded-full bg-slate-900 px-5 py-3 text-sm font-extrabold text-white shadow-2xl transition hover:bg-[#ff5a36] hover:shadow-[0_8px_30px_rgba(255,90,54,0.45)] hover:-translate-y-0.5 md:inline-flex"
           >
-            <HiShoppingCart className="text-lg" />
-            View cart
-            <span className="rounded-full bg-[#ff5a36] px-2.5 py-0.5 text-xs font-black">
-              {cartCount}
+            <HiShoppingCart className="text-base" />
+            {cartCount} item{cartCount !== 1 ? "s" : ""}
+            <span className="text-[#ff5a36] bg-white rounded-full px-2 py-0.5 text-xs font-black md:bg-[#ff5a36] md:text-white">
+              Cart →
             </span>
+          </button>
+        )}
+
+        {cartCount > 0 && (
+          <button type="button" onClick={() => navigate("/cart")}
+            className="fixed bottom-5 right-4 z-40 flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff5a36] to-[#ff6a46] px-5 py-3 text-sm font-extrabold text-white shadow-2xl transition hover:shadow-[0_8px_30px_rgba(255,90,54,0.45)] hover:-translate-y-0.5 md:hidden"
+          >
+            <HiShoppingCart className="text-base" />
+            Cart · {cartCount}
           </button>
         )}
       </main>
