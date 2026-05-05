@@ -625,81 +625,53 @@ const UserDashboard = () => {
         role="button"
         tabIndex={0}
         onKeyDown={(e) => e.key === "Enter" && openItemDetails(item)}
-        className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-float)] transition-all duration-300 hover:-translate-y-1.5 hover:border-[#ff5a36]/30"
+        className="menu-card group"
       >
         <div className="relative h-48 w-full flex-shrink-0 overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
           {item.image ? (
-            <img
-              src={item.image}
-              alt={item.name}
-              loading="lazy"
-              decoding="async"
-              className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
-            />
+            <img src={item.image} alt={item.name} loading="lazy" decoding="async"
+              className="h-full w-full object-cover transition duration-500 group-hover:scale-110" />
           ) : (
             <div className="grid h-full place-items-center text-slate-300">
               <HiOutlineShoppingBag className="text-5xl" />
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition duration-300" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition duration-300" />
           {inCart ? (
-            <span className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-emerald-500 px-3 py-1.5 text-xs font-extrabold text-white shadow-md">
-              <HiCheckCircle className="text-sm" /> In cart
+            <span className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-emerald-500 px-2.5 py-1 text-[10px] font-black text-white shadow-md">
+              <HiCheckCircle /> In cart
             </span>
           ) : (
-            <span className="absolute left-3 top-3 rounded-full bg-white/95 backdrop-blur px-3 py-1.5 text-xs font-extrabold text-slate-700 shadow-md border border-white/50">
+            <span className="absolute left-3 top-3 rounded-full bg-white/90 backdrop-blur-sm px-2.5 py-1 text-[10px] font-black text-slate-700 shadow border border-white/60">
               {titleCase(item.category)}
             </span>
           )}
+          <span className={`absolute right-3 top-3 rounded-full px-2 py-0.5 text-[9px] font-black border ${item.foodType === "veg" ? "bg-emerald-500 text-white border-emerald-600" : "bg-orange-500 text-white border-orange-600"}`}>
+            {FOOD_TYPE_LABELS[item.foodType] || "Food"}
+          </span>
         </div>
 
         <div className="flex flex-1 flex-col p-4">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <h3 className="truncate text-sm font-black capitalize text-slate-900">
-                {item.name}
-              </h3>
-              <p className="mt-1 truncate text-xs font-medium text-slate-500">
-                {item.shop?.name || selectedShop?.name || "Nearby shop"}
-              </p>
-            </div>
-            <span
-              className={`mt-0.5 flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-extrabold border ${item.foodType === "veg"
-                ? "bg-emerald-50 text-emerald-600 border-emerald-200"
-                : "bg-orange-50 text-orange-600 border-orange-200"
-                }`}
-            >
-              {FOOD_TYPE_LABELS[item.foodType] || "Food"}
-            </span>
-          </div>
+          <h3 className="truncate text-sm font-black capitalize text-slate-900 group-hover:text-[#ff5a36] transition">{item.name}</h3>
+          <p className="mt-0.5 truncate text-xs font-medium text-slate-400">{item.shop?.name || selectedShop?.name || "Nearby shop"}</p>
 
-          <div className="mt-4 flex items-center justify-between gap-2">
-            <p className="text-lg font-black text-[#ff5a36]">{formatPrice(item.price)}</p>
-            <div
-              className="flex items-center rounded-full border border-slate-200 bg-slate-50 hover:border-[#ff5a36]/40 transition"
-              onClick={(e) => e.stopPropagation()}
-            >
+          <div className="mt-auto pt-3 flex items-center justify-between gap-2">
+            <p className="text-base font-black text-[#ff5a36]">{formatPrice(item.price)}</p>
+            <div className="flex items-center rounded-full border-2 border-slate-100 bg-slate-50" onClick={(e) => e.stopPropagation()}>
               <button type="button" onClick={() => updateQuantity(item._id, -1)}
-                className="grid h-7 w-7 place-items-center text-slate-400 hover:text-[#ff5a36] rounded-l-full transition"
-                aria-label={`Decrease ${item.name}`}>
-                <HiMinus className="text-xs" />
-              </button>
+                className="grid h-7 w-7 place-items-center text-slate-400 hover:text-[#ff5a36] rounded-l-full transition text-xs"
+                aria-label={`Decrease ${item.name}`}><HiMinus /></button>
               <span className="w-6 text-center text-xs font-black text-slate-800">{quantity}</span>
               <button type="button" onClick={() => updateQuantity(item._id, 1)}
-                className="grid h-7 w-7 place-items-center text-slate-400 hover:text-[#ff5a36] rounded-r-full transition"
-                aria-label={`Increase ${item.name}`}>
-                <HiPlus className="text-xs" />
-              </button>
+                className="grid h-7 w-7 place-items-center text-slate-400 hover:text-[#ff5a36] rounded-r-full transition text-xs"
+                aria-label={`Increase ${item.name}`}><HiPlus /></button>
             </div>
           </div>
 
-          <button
-            type="button"
+          <button type="button"
             onClick={(e) => { e.stopPropagation(); addMenuItemToCart(item); }}
-            className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#ff5a36] to-[#ff6a46] text-sm font-extrabold text-white shadow-sm transition hover:shadow-md hover:from-[#e04e2d] hover:to-[#ff5a36] duration-200"
-          >
-            <HiShoppingCart className="text-sm" />
-            Add to cart
+            className="mt-3 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-[#ff5a36] to-[#ff7848] text-xs font-extrabold text-white shadow transition hover:shadow-md hover:from-[#e04e2d] duration-200">
+            <HiShoppingCart /> Add to cart
           </button>
         </div>
       </article>
@@ -721,12 +693,12 @@ const UserDashboard = () => {
         <div className="skeleton h-44 rounded-xl" />
         <div className="mt-4 skeleton h-4 w-3/4 rounded-lg" />
         <div className="mt-2 skeleton h-3 w-1/2 rounded-lg" />
-        <div className="mt-4 skeleton h-10 rounded-xl" />
+        <div className="mt-4 skeleton h-9 rounded-xl" />
       </div>
     ));
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
+    <div className="min-h-screen bg-[#fafafa]">
       <DashboardNavbar
         showSearch
         showCart
@@ -740,24 +712,24 @@ const UserDashboard = () => {
       />
 
       {!showOrders && isHomeView && (
-        <div className="gradient-hero border-b border-orange-100/60 px-4 py-6 sm:px-6 animate-fadeInUp">
+        <div className="dash-hero animate-fadeInUp">
           <div className="mx-auto max-w-7xl">
-            <div className="mb-4">
-              <p className="text-xs font-semibold uppercase tracking-widest text-[#ff5a36]">
-                {new Date().getHours() < 12 ? "Good morning" : new Date().getHours() < 17 ? "Good afternoon" : "Good evening"} 👋
-              </p>
-              <h1 className="mt-1 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
-                What are you <span className="text-[#ff5a36]">craving</span> today?
-              </h1>
-            </div>
-            <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
+            <span className="dash-hero-tag">
+              {new Date().getHours() < 12 ? "☀️ Good morning" : new Date().getHours() < 17 ? "🌤️ Good afternoon" : "🌙 Good evening"}
+            </span>
+            <h1 className="dash-hero-title">
+              What are you <span className="text-[#ff5a36]">craving</span> today?
+            </h1>
+            <div className="mt-5 flex gap-2.5 overflow-x-auto pb-1 [scrollbar-width:none]">
               {QUICK_CATEGORIES.map((cat) => (
-                <span
+                <button
                   key={cat.value}
-                  className="flex-none cursor-default select-none whitespace-nowrap rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700"
+                  type="button"
+                  onClick={() => { setQuickCategory(q => q === cat.value ? "" : cat.value); setCategory(""); }}
+                  className={`dash-cat-pill ${quickCategory === cat.value ? "dash-cat-pill--active" : ""}`}
                 >
                   {cat.label}
-                </span>
+                </button>
               ))}
             </div>
           </div>
@@ -766,31 +738,27 @@ const UserDashboard = () => {
 
       <main className="mx-auto w-full max-w-7xl px-4 pb-16 pt-6 sm:px-6">
         {showOrders && (
-          <section className="rounded-[32px] border border-[#ff5a36]/20 bg-gradient-to-br from-white to-slate-50/50 p-6 shadow-[0_20px_60px_rgba(255,90,54,0.08)]">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <section className="rounded-3xl border border-slate-200/60 bg-white p-6 shadow-[0_8px_40px_rgba(15,23,42,0.06)]">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff5a36]/10 to-orange-100/50 px-4 py-2 text-xs font-extrabold uppercase tracking-wider text-[#ff5a36] border border-[#ff5a36]/20">
-                  📋 Order history
-                </div>
-                <h1 className="mt-3 text-4xl font-black tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
-                  My orders
+                <span className="section-tag bg-[#fff0eb] text-[#ff5a36] border border-[#ff5a36]/20">
+                  📋 Order History
+                </span>
+                <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900">
+                  My Orders
                 </h1>
-                <p className="mt-2 text-sm font-semibold text-slate-500">
-                  Track and manage orders placed across shops.
+                <p className="mt-1 text-sm text-slate-500">
+                  Track and manage your orders in real time.
                 </p>
               </div>
-              <div className="flex gap-3">
-                <div className="inline-flex h-11 items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-600">
+              <div className="flex gap-2">
+                <div className="inline-flex h-10 items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-sm font-semibold text-emerald-600">
                   <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                   Live
                 </div>
-                <button
-                  type="button"
-                  onClick={closeOrders}
-                  className="inline-flex h-11 items-center gap-2 rounded-2xl bg-gradient-to-r from-slate-900 to-slate-800 px-5 text-sm font-extrabold text-white shadow-lg transition hover:shadow-xl hover:from-[#ff5a36] hover:to-[#ff4420]"
-                >
-                  <HiArrowLeft />
-                  Back to food
+                <button type="button" onClick={closeOrders}
+                  className="inline-flex h-10 items-center gap-2 rounded-xl bg-slate-900 px-4 text-sm font-bold text-white shadow transition hover:bg-[#ff5a36] hover:shadow-md">
+                  <HiArrowLeft /> Back to food
                 </button>
               </div>
             </div>
@@ -813,30 +781,25 @@ const UserDashboard = () => {
                   const stepIdx = getStepIndex(order.status || "pending");
                   const st = order.status || "pending";
                   return (
-                    <article key={order._id}
-                      className="animate-fadeInUp rounded-2xl border border-slate-200/70 bg-white p-5 shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-float)] transition duration-300 hover:border-[#ff5a36]/25"
-                    >
+                    <article key={order._id} className="order-card animate-fadeInUp">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100 ring-2 ring-[#ff5a36]/10">
+                          <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-2xl bg-slate-100 ring-2 ring-[#ff5a36]/10">
                             {order.shop?.image ? (
-                              <img src={order.shop.image} alt={order.shop?.name}
-                                loading="lazy" className="h-full w-full object-cover" />
+                              <img src={order.shop.image} alt={order.shop?.name} loading="lazy" className="h-full w-full object-cover" />
                             ) : <div className="grid h-full place-items-center text-slate-300"><HiOutlineShoppingBag /></div>}
                           </div>
                           <div>
                             <h2 className="text-sm font-black text-slate-900">{order.shop?.name || "Shop order"}</h2>
                             <p className="mt-0.5 text-xs text-slate-400">{new Date(order.createdAt).toLocaleString()}</p>
-                            <span className={`mt-1.5 inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-extrabold border ${st === "delivered" ? "bg-emerald-50 text-emerald-600 border-emerald-200"
-                              : st === "pending" ? "bg-yellow-50 text-yellow-600 border-yellow-200"
-                                : "bg-[#fff0eb] text-[#ff5a36] border-[#ff5a36]/30"
-                              }`}>
+                            <span className={`status-badge status-badge--${st} mt-1.5`}>
+                              <span className="h-1.5 w-1.5 rounded-full bg-current" />
                               {STATUS_LABELS[st] || st}
                             </span>
                           </div>
                         </div>
                         <div className="text-left sm:text-right">
-                          <p className="text-xs font-bold text-slate-400">Total</p>
+                          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total</p>
                           <p className="text-xl font-black text-slate-900">PKR {Number(order.totalAmount || 0).toLocaleString()}</p>
                         </div>
                       </div>
@@ -935,7 +898,7 @@ const UserDashboard = () => {
               </div>
             </div>
 
-            <div className="scroll-fade-r flex snap-x gap-4 overflow-x-auto pb-3 [scrollbar-width:thin]">
+            <div className="flex snap-x gap-4 overflow-x-auto pb-3 [scrollbar-width:thin]">
               {shopsLoading
                 ? renderShopSkeletons()
                 : topShops.map((shop, index) => (
@@ -943,10 +906,7 @@ const UserDashboard = () => {
                     key={shop._id}
                     type="button"
                     onClick={() => openShop(shop)}
-                    className={`group relative flex h-[270px] min-w-[250px] flex-none snap-start flex-col overflow-hidden rounded-2xl border bg-white text-left shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[var(--shadow-float)] sm:min-w-[290px] ${activeShopId === shop._id
-                      ? "border-2 border-[#ff5a36] ring-2 ring-[#ff5a36]/15"
-                      : "border-slate-200/80 hover:border-[#ff5a36]/40"
-                      }`}
+                    className={`shop-card group h-[270px] sm:w-[290px] ${activeShopId === shop._id ? "shop-card--active" : ""}`}
                   >
                     <div className="relative h-44 w-full flex-shrink-0 overflow-hidden bg-slate-100">
                       {shop.image ? (
@@ -1241,11 +1201,10 @@ const UserDashboard = () => {
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
+              <div className="filter-bar">
                 <label className="relative">
                   <select value={category} onChange={(e) => { setCategory(e.target.value); setQuickCategory(""); }}
-                    className="custom-select h-9 rounded-lg border border-slate-200 bg-slate-50 pl-3 pr-8 text-sm font-semibold text-slate-600 outline-none transition hover:border-[#ff5a36]/50 focus:border-[#ff5a36] focus:bg-white"
-                    aria-label="Filter by category">
+                    className="filter-select pr-8" aria-label="Filter by category">
                     <option value="">All categories</option>
                     {CATEGORIES.map((opt) => <option key={opt} value={opt}>{titleCase(opt)}</option>)}
                   </select>
@@ -1254,8 +1213,7 @@ const UserDashboard = () => {
 
                 <label className="relative">
                   <select value={foodType} onChange={(e) => setFoodType(e.target.value)}
-                    className="custom-select h-9 rounded-lg border border-slate-200 bg-slate-50 pl-3 pr-8 text-sm font-semibold text-slate-600 outline-none transition hover:border-[#ff5a36]/50 focus:border-[#ff5a36] focus:bg-white"
-                    aria-label="Filter by food type">
+                    className="filter-select pr-8" aria-label="Filter by food type">
                     <option value="">All types</option>
                     <option value="veg">🥬 Veg</option>
                     <option value="non-veg">🍗 Non-Veg</option>
@@ -1265,8 +1223,7 @@ const UserDashboard = () => {
 
                 <label className="relative">
                   <select value={sort} onChange={(e) => setSort(e.target.value)}
-                    className="custom-select h-9 rounded-lg border border-slate-200 bg-slate-50 pl-3 pr-8 text-sm font-semibold text-slate-600 outline-none transition hover:border-[#ff5a36]/50 focus:border-[#ff5a36] focus:bg-white"
-                    aria-label="Sort items">
+                    className="filter-select pr-8" aria-label="Sort items">
                     {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                   <HiChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
@@ -1320,21 +1277,15 @@ const UserDashboard = () => {
         )}
 
         {cartCount > 0 && (
-          <button type="button" onClick={() => navigate("/cart")}
-            className="fixed bottom-6 right-5 z-40 hidden items-center gap-2.5 rounded-full bg-slate-900 px-5 py-3 text-sm font-extrabold text-white shadow-2xl transition hover:bg-[#ff5a36] hover:shadow-[0_8px_30px_rgba(255,90,54,0.45)] hover:-translate-y-0.5 md:inline-flex"
-          >
+          <button type="button" onClick={() => navigate("/cart")} className="cart-fab hidden md:flex">
             <HiShoppingCart className="text-base" />
             {cartCount} item{cartCount !== 1 ? "s" : ""}
-            <span className="text-[#ff5a36] bg-white rounded-full px-2 py-0.5 text-xs font-black md:bg-[#ff5a36] md:text-white">
-              Cart →
-            </span>
+            <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-black">Cart →</span>
           </button>
         )}
 
         {cartCount > 0 && (
-          <button type="button" onClick={() => navigate("/cart")}
-            className="fixed bottom-5 right-4 z-40 flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff5a36] to-[#ff6a46] px-5 py-3 text-sm font-extrabold text-white shadow-2xl transition hover:shadow-[0_8px_30px_rgba(255,90,54,0.45)] hover:-translate-y-0.5 md:hidden"
-          >
+          <button type="button" onClick={() => navigate("/cart")} className="cart-fab md:hidden">
             <HiShoppingCart className="text-base" />
             Cart · {cartCount}
           </button>

@@ -55,7 +55,6 @@ const DashboardNavbar = ({
   const [selectedLocation, setSelectedLocation] = useState("");
   const { city } = useGetCity();
 
-
   const fullName = user?.fullName || "Account";
   const firstName = fullName.split(" ")[0];
   const initials = useMemo(() => getInitials(fullName), [fullName]);
@@ -85,9 +84,6 @@ const DashboardNavbar = ({
     return [...new Set([location, city].filter(Boolean))];
   }, [city, location]);
 
-
-
-
   const onLogout = async () => {
     try {
       await axios.post(`${serverUrl}/api/auth/logout`, {}, { withCredentials: true });
@@ -99,8 +95,8 @@ const DashboardNavbar = ({
   };
 
   const renderSearchBar = (className = "") => (
-    <div className={`relative ${className}`}>
-      <HiOutlineSearch className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg" />
+    <div className={`navbar-search-wrap ${className}`}>
+      <HiOutlineSearch className="navbar-search-icon" />
       <input
         id="global-search"
         type="text"
@@ -109,16 +105,13 @@ const DashboardNavbar = ({
         placeholder="Search shops, dishes, categories…"
         aria-label="Search food"
         autoComplete="off"
-        className="w-full rounded-full border-2 border-slate-200/80 bg-white/90 py-2.5 pl-12 pr-5 text-sm text-slate-700 shadow-sm transition
-          placeholder:text-slate-400
-          focus:border-[#ff5a36] focus:ring-4 focus:ring-[#ff5a36]/10 focus:outline-none focus-visible:outline-none
-          hover:border-slate-300"
+        className="navbar-search-input"
       />
       {effectiveSearch && (
         <button
           type="button"
           onClick={() => setLocalSearch("")}
-          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+          className="navbar-search-clear"
           aria-label="Clear search"
         >
           <HiX className="text-sm" />
@@ -128,59 +121,60 @@ const DashboardNavbar = ({
   );
 
   return (
-    <header
-      className="sticky top-0 z-50 w-full border-b border-slate-200/60 glass shadow-sm"
-      style={{ height: "var(--navbar-h)" }}
-    >
-      <div className="mx-auto hidden h-full w-full max-w-7xl items-center gap-4 px-6 md:flex">
+    <header className="navbar-root" style={{ height: "var(--navbar-h)" }}>
+      {/* ── Desktop ── */}
+      <div className="mx-auto hidden h-full w-full max-w-7xl items-center gap-5 px-6 md:flex">
 
+        {/* Logo */}
         <button
           type="button"
           onClick={() => { onHomeClick?.(); navigate("/"); }}
-          className="group flex flex-shrink-0 items-center gap-2.5 transition hover:scale-[1.03]"
+          className="navbar-logo-btn"
           aria-label="Home"
         >
-          <div className="grid h-9 w-9 place-items-center rounded-full gradient-primary text-white shadow-md group-hover:shadow-lg transition">
+          <div className="navbar-logo-icon">
             <span className="text-base">🍽️</span>
           </div>
-          <span className="text-base font-black tracking-tight text-slate-900">
-            Hunger<span className="text-[#ff5a36]">Food</span>
+          <span className="navbar-logo-text">
+            Hunger<span className="navbar-logo-accent">Food</span>
           </span>
         </button>
 
+        {/* Location */}
         {showLocation && (
-          <div className="flex flex-shrink-0 items-center gap-1.5 rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 text-sm font-semibold text-slate-600 shadow-sm hover:border-[#ff5a36]/40 transition cursor-pointer">
-            <HiOutlineLocationMarker className="text-[#ff5a36] text-base flex-shrink-0" />
+          <div className="navbar-location-pill">
+            <HiOutlineLocationMarker className="navbar-location-icon" />
             <select
               value={location}
               onChange={(e) => setSelectedLocation(e.target.value)}
-              className="custom-select bg-transparent text-sm font-semibold text-slate-700 outline-none max-w-[120px] cursor-pointer"
+              className="navbar-location-select"
               aria-label="Delivery location"
             >
               {locationOptions.map((opt) => (
                 <option key={opt} value={opt}>{opt}</option>
               ))}
             </select>
-            <HiOutlineChevronDown className="text-slate-400 text-xs" />
+            <HiOutlineChevronDown className="navbar-location-chevron" />
           </div>
         )}
 
+        {/* Search */}
         {showSearch && renderSearchBar("flex-1 max-w-2xl")}
 
-
-        <div className="ml-auto flex flex-shrink-0 items-center gap-1">
+        {/* Right actions */}
+        <div className="ml-auto flex flex-shrink-0 items-center gap-1.5">
           <NotificationBell />
 
           {showCart && (
             <button
               type="button"
               onClick={() => navigate("/cart")}
-              className="relative grid h-10 w-10 place-items-center rounded-full text-slate-600 transition hover:bg-slate-100 hover:text-[#ff5a36]"
+              className="navbar-icon-btn"
               aria-label={`Cart (${cartCount} items)`}
             >
               <HiOutlineShoppingCart className="text-xl" />
               {cartCount > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 grid h-5 w-5 place-items-center rounded-full gradient-primary text-[10px] font-black text-white shadow animate-cartBounce">
+                <span className="navbar-badge animate-cartBounce">
                   {cartCount > 9 ? "9+" : cartCount}
                 </span>
               )}
@@ -191,31 +185,33 @@ const DashboardNavbar = ({
             <button
               type="button"
               onClick={() => onOrdersClick ? onOrdersClick() : navigate("/?orders=open")}
-              className="relative flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-[#ff5a36]/50 hover:text-[#ff5a36] hover:bg-[#fff7f3]"
+              className="navbar-orders-btn"
               aria-label="My orders"
             >
               <HiOutlineClipboardList className="text-base" />
-              Orders
+              <span>Orders</span>
               {activeOrderCount > 0 && (
-                <span className="absolute -right-1 -top-1 grid h-4 w-4 place-items-center rounded-full bg-emerald-500 text-[9px] font-black text-white shadow animate-pulseSoft">
+                <span className="navbar-orders-badge animate-pulseSoft">
                   {activeOrderCount}
                 </span>
               )}
             </button>
           )}
 
+          {/* Profile */}
           <div className="relative ml-1">
             <button
               type="button"
               onClick={() => setProfileOpen((v) => !v)}
-              className="flex items-center gap-2 rounded-full border-2 border-transparent bg-gradient-to-r from-[#ff5a36] to-[#ff7c5c] px-1 py-1 text-white shadow-md transition hover:shadow-lg hover:scale-105"
+              className="navbar-profile-btn"
               aria-haspopup="menu"
               aria-expanded={profileOpen}
               aria-label="Profile menu"
             >
-              <span className="grid h-8 w-8 place-items-center rounded-full text-sm font-black">
-                {initials}
-              </span>
+              <span className="navbar-avatar">{initials}</span>
+              <HiOutlineChevronDown
+                className={`navbar-profile-chevron ${profileOpen ? "rotate-180" : ""}`}
+              />
             </button>
 
             {profileOpen && (
@@ -227,63 +223,68 @@ const DashboardNavbar = ({
                   aria-label="Close profile menu"
                 />
                 <div
-                  className="absolute right-0 top-12 z-50 w-60 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_16px_48px_rgba(15,23,42,0.14)] animate-fadeIn"
+                  className="navbar-dropdown animate-fadeIn"
                   role="menu"
                 >
-
-                  <div className="border-b border-slate-100 bg-gradient-to-br from-[#fff8f6] to-white px-4 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-full gradient-primary text-sm font-black text-white shadow">
-                        {initials}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-black text-slate-900">{fullName}</p>
-                        <p className="truncate text-xs text-slate-500">{user?.email || ""}</p>
-                      </div>
+                  {/* Profile header */}
+                  <div className="navbar-dropdown-header">
+                    <div className="navbar-dropdown-avatar">{initials}</div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-slate-900">{fullName}</p>
+                      <p className="truncate text-xs text-slate-500">{user?.email || ""}</p>
                     </div>
-                    <p className="mt-2 text-xs font-semibold text-slate-400 italic">
-                      {getGreeting()}, {firstName}! 👋
-                    </p>
                   </div>
+                  <p className="px-4 pb-3 text-xs font-medium text-slate-400 italic">
+                    {getGreeting()}, {firstName}! 👋
+                  </p>
 
+                  <div className="navbar-dropdown-divider" />
 
-                  <div className="py-1">
+                  <div className="py-1.5">
                     <button
                       type="button"
                       onClick={() => {
                         setProfileOpen(false);
                         onOrdersClick ? onOrdersClick() : navigate("/?orders=open");
                       }}
-                      className="flex w-full items-center gap-3 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-[#ff5a36]"
+                      className="navbar-dropdown-item"
                       role="menuitem"
                     >
-                      <HiOutlineClipboardList className="text-base text-slate-400" />
+                      <span className="navbar-dropdown-item-icon">
+                        <HiOutlineClipboardList className="text-base" />
+                      </span>
                       My Orders
                     </button>
                     <button
                       type="button"
                       onClick={() => { setProfileOpen(false); navigate("/cart"); }}
-                      className="flex w-full items-center gap-3 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-[#ff5a36]"
+                      className="navbar-dropdown-item"
                       role="menuitem"
                     >
-                      <HiOutlineShoppingCart className="text-base text-slate-400" />
+                      <span className="navbar-dropdown-item-icon">
+                        <HiOutlineShoppingCart className="text-base" />
+                      </span>
                       My Cart
                       {cartCount > 0 && (
-                        <span className="ml-auto rounded-full bg-[#ff5a36] px-2 py-0.5 text-xs font-black text-white">
+                        <span className="ml-auto rounded-full bg-[#ff5a36] px-2 py-0.5 text-xs font-bold text-white">
                           {cartCount}
                         </span>
                       )}
                     </button>
                   </div>
 
-                  <div className="border-t border-slate-100 py-1">
+                  <div className="navbar-dropdown-divider" />
+
+                  <div className="py-1.5">
                     <button
                       type="button"
                       onClick={() => { setProfileOpen(false); onLogout(); }}
-                      className="flex w-full items-center gap-3 px-4 py-2.5 text-sm font-semibold text-red-500 transition hover:bg-red-50"
+                      className="navbar-dropdown-item navbar-dropdown-item--danger"
                       role="menuitem"
                     >
-                      <HiOutlineLogout className="text-base" />
+                      <span className="navbar-dropdown-item-icon">
+                        <HiOutlineLogout className="text-base" />
+                      </span>
                       Log Out
                     </button>
                   </div>
@@ -294,18 +295,16 @@ const DashboardNavbar = ({
         </div>
       </div>
 
-
+      {/* ── Mobile ── */}
       <div className="flex h-full flex-col justify-center md:hidden">
-
         <div className="flex items-center justify-between gap-2 px-4">
-
           <button
             type="button"
             onClick={() => { onHomeClick?.(); navigate("/"); }}
             className="flex flex-shrink-0 items-center gap-2 transition"
             aria-label="Home"
           >
-            <div className="grid h-8 w-8 place-items-center rounded-full gradient-primary text-white shadow-md">
+            <div className="grid h-8 w-8 place-items-center rounded-xl gradient-primary text-white shadow-md">
               <span className="text-sm">🍽️</span>
             </div>
             <span className="text-sm font-black tracking-tight text-slate-900">
@@ -319,7 +318,7 @@ const DashboardNavbar = ({
               <button
                 type="button"
                 onClick={() => setMobileSearchOpen((v) => !v)}
-                className="grid h-10 w-10 place-items-center rounded-full text-slate-600 transition hover:bg-slate-100 hover:text-[#ff5a36]"
+                className="navbar-icon-btn"
                 aria-label="Toggle search"
                 aria-expanded={mobileSearchOpen}
               >
@@ -330,12 +329,12 @@ const DashboardNavbar = ({
               <button
                 type="button"
                 onClick={() => navigate("/cart")}
-                className="relative grid h-10 w-10 place-items-center rounded-full text-slate-600 transition hover:bg-slate-100 hover:text-[#ff5a36]"
+                className="navbar-icon-btn"
                 aria-label={`Cart (${cartCount})`}
               >
                 <HiOutlineShoppingCart className="text-xl" />
                 {cartCount > 0 && (
-                  <span className="absolute -right-0.5 -top-0.5 grid h-5 w-5 place-items-center rounded-full gradient-primary text-[10px] font-black text-white shadow">
+                  <span className="navbar-badge">
                     {cartCount > 9 ? "9+" : cartCount}
                   </span>
                 )}
